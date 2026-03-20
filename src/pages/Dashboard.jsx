@@ -6,7 +6,8 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { useAuth } from '../contexts/AuthContext';
 import '../App.css';
 
-const API_URL = 'http://localhost:3001/tasks'; // We will update this in the next issue when we integrate Frontend to Backend fully
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001'; 
+const TASKS_API = `${API_BASE}/api/tasks`;
 const POLL_INTERVAL = 10000; // 10 seconds
 
 const PRIORITY_ORDER = { High: 1, Medium: 2, Low: 3 };
@@ -18,14 +19,14 @@ function Dashboard() {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('All');
-  
-  // Expose the logout function so we can use it to test state destruction
-  const { logout } = useAuth(); 
+  const { token, logout } = useAuth(); 
 
   const fetchTasks = useCallback(async (isInitial = false) => {
     if (isInitial) setLoading(true);
     try {
-      const response = await axios.get(API_URL);
+      const response = await axios.get(TASKS_API, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setTasks(response.data);
       setLastUpdated(new Date());
       setError(null);
@@ -35,7 +36,7 @@ function Dashboard() {
     } finally {
       if (isInitial) setLoading(false);
     }
-  }, []);
+  }, [token]);
 
   useEffect(() => {
     fetchTasks(true);
