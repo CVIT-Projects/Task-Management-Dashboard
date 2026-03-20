@@ -6,6 +6,13 @@ const PRIORITY_CONFIG = {
   Low: { label: 'Low', className: 'priority-low', icon: '🟢' },
 };
 
+const STATUS_CONFIG = {
+  'Not Started': { className: 'status-not-started', icon: '⚪' },
+  'In Progress': { className: 'status-in-progress',  icon: '🔵' },
+  'Completed':   { className: 'status-completed',    icon: '🟢' },
+  'Blocked':     { className: 'status-blocked',      icon: '🔴' },
+};
+
 function formatDateTime(dateStr) {
   if (!dateStr) return '—';
   const d = new Date(dateStr);
@@ -33,6 +40,11 @@ function TaskCard({ task }) {
       <div className="col-name">
         <span className="task-name">{task.taskName}</span>
         {overdue && <span className="overdue-badge">Overdue</span>}
+        {task.status && (
+          <span className={`status-chip ${STATUS_CONFIG[task.status]?.className}`}>
+            {STATUS_CONFIG[task.status]?.icon} {task.status}
+          </span>
+        )}
       </div>
 
       <div className="col-assigned">
