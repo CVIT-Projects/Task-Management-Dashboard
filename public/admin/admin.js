@@ -1,4 +1,33 @@
-const API_URL = 'http://localhost:3001/tasks';
+const token = localStorage.getItem('authToken');
+if (!token) window.location.href = '/login';
+
+const userRaw = localStorage.getItem('authUser');
+const currentUser = userRaw ? JSON.parse(userRaw) : null;
+
+function getAuthHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
+  };
+}
+
+function handleUnauthorized(status) {
+  if (status === 401 || status === 403) {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('authUser');
+    window.location.href = '/login';
+    return true;
+  }
+  return false;
+}
+
+function logout() {
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('authUser');
+  window.location.href = '/login';
+}
+
+const API_URL = 'http://localhost:3001/api/tasks';
 let allTasks = [];
 let deleteTargetId = null;
 let nextId = null;
@@ -6,6 +35,9 @@ let nextId = null;
 // ─── Init ───────────────────────────────────────────────────────────────────
 
 async function init() {
+  if (currentUser) {
+    document.getElementById('adminUserName').textContent = currentUser.name;
+  }
   await fetchTasks();
   setInterval(fetchTasks, 10000);
 }
@@ -14,8 +46,11 @@ async function init() {
 
 async function fetchTasks() {
   try {
-    const res = await fetch(API_URL);
-    if (!res.ok) throw new Error('Server error');
+    const res = await fetch(API_URL, { headers: getAuthHeaders() });
+    if (!res.ok) {
+      if (handleUnauthorized(res.status)) return;
+      throw new Error('Server error');
+    }
     allTasks = await res.json();
     nextId = allTasks.length > 0 ? Math.max(...allTasks.map(t => t.id)) + 1 : 1;
     renderTasks();
@@ -28,26 +63,38 @@ async function fetchTasks() {
 async function createTask(data) {
   const res = await fetch(API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders(),
     body: JSON.stringify({ ...data, id: nextId }),
   });
-  if (!res.ok) throw new Error('Failed to create task');
+  if (!res.ok) {
+    if (handleUnauthorized(res.status)) return;
+    throw new Error('Failed to create task');
+  }
   return res.json();
 }
 
 async function updateTask(id, data) {
   const res = await fetch(`${API_URL}/${id}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders(),
     body: JSON.stringify({ ...data, id }),
   });
-  if (!res.ok) throw new Error('Failed to update task');
+  if (!res.ok) {
+    if (handleUnauthorized(res.status)) return;
+    throw new Error('Failed to update task');
+  }
   return res.json();
 }
 
 async function deleteTask(id) {
-  const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-  if (!res.ok) throw new Error('Failed to delete task');
+  const res = await fetch(`${API_URL}/${id}`, { 
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  });
+  if (!res.ok) {
+    if (handleUnauthorized(res.status)) return;
+    throw new Error('Failed to delete task');
+  }
 }
 
 // ─── Form Handling ───────────────────────────────────────────────────────────
