@@ -1,5 +1,5 @@
 const token = localStorage.getItem('authToken');
-if (!token) window.location.href = '/login';
+if (!token) window.location.href = '/';
 
 const userRaw = localStorage.getItem('authUser');
 const currentUser = userRaw ? JSON.parse(userRaw) : null;
@@ -15,7 +15,7 @@ function handleUnauthorized(status) {
   if (status === 401 || status === 403) {
     localStorage.removeItem('authToken');
     localStorage.removeItem('authUser');
-    window.location.href = '/login';
+    window.location.href = '/';
     return true;
   }
   return false;
@@ -24,13 +24,12 @@ function handleUnauthorized(status) {
 function logout() {
   localStorage.removeItem('authToken');
   localStorage.removeItem('authUser');
-  window.location.href = '/login';
+  window.location.href = '/';
 }
 
 const API_URL = 'http://localhost:3001/api/tasks';
 let allTasks = [];
 let deleteTargetId = null;
-let nextId = null;
 
 // ─── Init ───────────────────────────────────────────────────────────────────
 
@@ -52,7 +51,6 @@ async function fetchTasks() {
       throw new Error('Server error');
     }
     allTasks = await res.json();
-    nextId = allTasks.length > 0 ? Math.max(...allTasks.map(t => t.id)) + 1 : 1;
     renderTasks();
     setStatus(true);
   } catch (e) {
@@ -64,7 +62,7 @@ async function createTask(data) {
   const res = await fetch(API_URL, {
     method: 'POST',
     headers: getAuthHeaders(),
-    body: JSON.stringify({ ...data, id: nextId }),
+    body: JSON.stringify(data),
   });
   if (!res.ok) {
     if (handleUnauthorized(res.status)) return;
