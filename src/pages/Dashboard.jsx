@@ -35,7 +35,7 @@ function Dashboard() {
         logout();
         return;
       }
-      setError('Unable to reach the task server. Please ensure the API server is running on port 3001.');
+      setError('Unable to load tasks. Please check your connection or contact your administrator.');
       console.error('Fetch error:', err);
     } finally {
       if (isInitial) setLoading(false);
