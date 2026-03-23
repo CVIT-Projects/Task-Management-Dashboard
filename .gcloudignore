@@ -1,0 +1,32 @@
+# Dependencies (App Engine runs npm install automatically)
+node_modules/
+backend/node_modules/
+
+# Local environment files — NEVER upload these
+.env
+backend/.env
+*.env
+
+# Local dev database (replaced by MongoDB Atlas in production)
+db.json
+
+# Source files not needed after build
+src/
+
+# Dev/test files
+*.test.js
+*.spec.js
+.eslintrc
+eslint.config.js
+
+# Git
+.git/
+.gitignore
+
+# Vite source config (only dist/ is needed)
+vite.config.js
+
+# Misc
+.DS_Store
+*.log
+README.md
