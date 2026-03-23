@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 
-export const verifyToken = async (req, res, next) => {
+export const verifyToken = (req, res, next) => {
   let token;
 
   // Check if authorization header exists and has the Bearer format
@@ -13,12 +13,8 @@ export const verifyToken = async (req, res, next) => {
       // Verify the token using our secret key
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      // Find the user by ID from the token payload, and attach to req.user (excluding password)
-      req.user = await User.findById(decoded.id).select('-password');
-      
-      if (!req.user) {
-        return res.status(401).json({ message: 'Not authorized, user not found' });
-      }
+      // Attach decoded payload directly to req.user
+      req.user = decoded;
 
       next(); // Move to the actual route handler
     } catch (error) {

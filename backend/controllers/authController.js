@@ -2,10 +2,12 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 
 // Helper function to generate JWT token
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || '1d',
-  });
+const generateToken = (user) => {
+  return jwt.sign(
+    { id: user._id, role: user.role, name: user.name, email: user.email },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRES_IN || '1d' }
+  );
 };
 
 export const register = async (req, res, next) => {
@@ -39,7 +41,7 @@ export const register = async (req, res, next) => {
 
     if (user) {
       res.status(201).json({
-        token: generateToken(user._id),
+        token: generateToken(user),
         user: user.toJSON() // Safely returns user without password because of our schema transform
       });
     } else {
@@ -64,7 +66,7 @@ export const login = async (req, res, next) => {
     // Validate user exists and password is correct (using our instance method)
     if (user && (await user.comparePassword(password))) {
       res.json({
-        token: generateToken(user._id),
+        token: generateToken(user),
         user: user.toJSON()
       });
     } else {
