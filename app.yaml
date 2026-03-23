@@ -1,0 +1,25 @@
+runtime: nodejs20
+env: standard
+instance_class: F1
+
+entrypoint: node backend/server.js
+
+# Increase request timeout to 60s (default is 10s)
+# Useful for slow cold starts on first request
+automatic_scaling:
+  min_idle_instances: automatic
+  max_idle_instances: automatic
+  min_pending_latency: automatic
+  max_pending_latency: automatic
+
+env_variables:
+  NODE_ENV: "production"
+  PORT: "8080"
+  # Do NOT put real secrets here.
+  # Replace these placeholders before deploying.
+  # Use Secret Manager or Cloud Run env vars for real values.
+  MONGO_URI: "REPLACE_WITH_ATLAS_URI"
+  JWT_SECRET: "REPLACE_WITH_LONG_RANDOM_STRING"
+  ADMIN_SECRET: "REPLACE_WITH_ADMIN_SECRET"
+  JWT_EXPIRES_IN: "1d"
+  CLIENT_URL: "REPLACE_WITH_YOUR_APPSPOT_URL"
