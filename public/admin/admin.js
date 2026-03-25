@@ -27,7 +27,8 @@ function logout() {
   window.location.href = '/';
 }
 
-const API_URL = 'http://localhost:3001/api/tasks';
+const API_BASE = window.location.origin;
+const API_URL = `${API_BASE}/api/tasks`;
 let allTasks = [];
 let deleteTargetId = null;
 
