@@ -6,7 +6,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { useAuth } from '../contexts/AuthContext';
 import '../App.css';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001'; 
+const API_BASE = import.meta.env.VITE_API_URL || '';
 const TASKS_API = `${API_BASE}/api/tasks`;
 const POLL_INTERVAL = 10000; // 10 seconds
 

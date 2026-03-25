@@ -2,26 +2,17 @@
 node_modules/
 backend/node_modules/
 
-# Local environment files — NEVER upload these
+# Git
+.git/
+.gitignore
+
+# SECRETS
 .env
 backend/.env
 *.env
 
-# Local dev database (replaced by MongoDB Atlas in production)
-db.json
-
-# Source files not needed after build
-src/
-
-# Dev/test files
-*.test.js
-*.spec.js
-.eslintrc
-eslint.config.js
-
-# Git
-.git/
-.gitignore
+# OVERRIDE: Force gcloud to upload the compiled frontend despite .gitignore
+!dist/
 
 # Vite source config (only dist/ is needed)
 vite.config.js
