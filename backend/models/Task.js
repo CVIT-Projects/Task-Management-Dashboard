@@ -24,6 +24,11 @@ const taskSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
+  estimatedHours: {
+    type: Number,
+    default: null,
+    min: 0
+  },
   priority: {
     type: String,
     enum: ['High', 'Medium', 'Low'],

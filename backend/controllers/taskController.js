@@ -1,4 +1,5 @@
 import Task from '../models/Task.js';
+import TimeEntry from '../models/TimeEntry.js';
 
 // @desc    Get all tasks
 // @route   GET /api/tasks
@@ -25,7 +26,17 @@ export const getTasks = async (req, res, next) => {
       .populate('assignedTo', 'name email')
       .populate('createdBy', 'name email')
       .sort({ deadline: 1 });
-    res.json(tasks);
+
+    // Aggregate tracked time for each task using Promise.all
+    const tasksWithTracked = await Promise.all(
+      tasks.map(async (task) => {
+        const entries = await TimeEntry.find({ task: task._id });
+        const trackedSeconds = entries.reduce((sum, e) => sum + (e.duration || 0), 0);
+        return { ...task.toJSON(), trackedSeconds };
+      })
+    );
+
+    res.json(tasksWithTracked);
   } catch (error) {
     next(error);
   }
