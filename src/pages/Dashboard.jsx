@@ -24,11 +24,7 @@ function Dashboard() {
   const fetchTasks = useCallback(async (isInitial = false) => {
     if (isInitial) setLoading(true);
     try {
-      const endpoint = user?.role === 'admin' 
-        ? TASKS_API 
-        : `${TASKS_API}?assignedTo=me`;
-
-      const response = await axios.get(endpoint, {
+      const response = await axios.get(TASKS_API, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setTasks(response.data);
@@ -88,7 +84,7 @@ function Dashboard() {
             <p>{error}</p>
           </div>
         ) : (
-          <TaskTable tasks={processedTasks} />
+          <TaskTable tasks={processedTasks} user={user} />
         )}
       </main>
     </div>

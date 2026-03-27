@@ -20,7 +20,7 @@ function Navbar({ searchTerm, onSearchChange, priorityFilter, onPriorityChange, 
         <div className="brand-icon">📋</div>
         <div className="brand-text">
           <h1>Task Dashboard</h1>
-          <span className="brand-subtitle">{user?.role === 'admin' ? 'Admin View' : 'Read-Only View'}</span>
+          <span className="brand-subtitle">{user?.role === 'admin' ? 'Admin View' : 'My Tasks'}</span>
         </div>
       </div>
 

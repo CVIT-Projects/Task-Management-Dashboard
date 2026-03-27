@@ -7,13 +7,17 @@ export const getTasks = async (req, res, next) => {
   try {
     const filter = {};
 
-    // If ?assignedTo=me is passed, filter to only the logged-in user's tasks
-    if (req.query.assignedTo === 'me') {
+    if (req.user.role === 'admin') {
+      // Admins can optionally filter by user, or see everything
+      if (req.query.assignedTo) {
+        filter.assignedTo = req.query.assignedTo === 'me' 
+          ? req.user.id 
+          : req.query.assignedTo;
+      }
+      // No filter = all tasks
+    } else {
+      // Regular users ALWAYS only see their own tasks — non-negotiable
       filter.assignedTo = req.user.id;
-    } 
-    // If ?assignedTo=<userId> is passed (admin use), filter to that user
-    else if (req.query.assignedTo) {
-      filter.assignedTo = req.query.assignedTo;
     }
 
     // Find tasks, populate, and sort

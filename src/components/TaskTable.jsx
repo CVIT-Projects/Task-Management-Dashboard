@@ -1,13 +1,17 @@
 import TaskCard from './TaskCard';
 import './TaskTable.css';
 
-function TaskTable({ tasks }) {
+function TaskTable({ tasks, user }) {
   if (tasks.length === 0) {
+    const emptyMessage = user?.role === 'admin' 
+      ? 'No tasks match your filter criteria.' 
+      : 'You have no tasks assigned to you yet.';
+
     return (
       <div className="empty-state">
         <div className="empty-icon">🗂️</div>
         <h2>No Tasks Found</h2>
-        <p>Try adjusting your search or filter criteria.</p>
+        <p>{emptyMessage}</p>
       </div>
     );
   }
