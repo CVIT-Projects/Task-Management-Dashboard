@@ -1,4 +1,5 @@
 import './TaskCard.css';
+import { useTimer } from '../contexts/TimerContext';
 
 const PRIORITY_CONFIG = {
   High: { label: 'High', className: 'priority-high', icon: '🔴' },
@@ -27,9 +28,19 @@ function isOverdue(deadlineStr) {
   return new Date(deadlineStr) < new Date();
 }
 
+function formatDuration(seconds) {
+  const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+  const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+  const s = (seconds % 60).toString().padStart(2, '0');
+  return `${h}:${m}:${s}`;
+}
+
 function TaskCard({ task }) {
   const priority = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.Low;
   const overdue = isOverdue(task.deadline);
+  
+  const { activeEntry, elapsed, startTimer, stopTimer } = useTimer();
+  const isRunning = String(activeEntry?.task) === String(task.id);
 
   return (
     <div className={`task-row ${priority.className} ${overdue ? 'overdue' : ''}`}>
@@ -39,12 +50,20 @@ function TaskCard({ task }) {
 
       <div className="col-name">
         <span className="task-name">{task.taskName}</span>
-        {overdue && <span className="overdue-badge">Overdue</span>}
-        {task.status && (
-          <span className={`status-chip ${STATUS_CONFIG[task.status]?.className}`}>
-            {STATUS_CONFIG[task.status]?.icon} {task.status}
-          </span>
-        )}
+        <div className="task-badges">
+          {overdue && <span className="overdue-badge">Overdue</span>}
+          {task.status && (
+            <span className={`status-chip ${STATUS_CONFIG[task.status]?.className}`}>
+              {STATUS_CONFIG[task.status]?.icon} {task.status}
+            </span>
+          )}
+        </div>
+        <button 
+          className={`timer-btn ${isRunning ? 'running' : 'stopped'}`}
+          onClick={() => isRunning ? stopTimer() : startTimer(task.id)}
+        >
+          {isRunning ? `⏹ Stop ${formatDuration(elapsed)}` : '▶ Start Timer'}
+        </button>
       </div>
 
       <div className="col-assigned">

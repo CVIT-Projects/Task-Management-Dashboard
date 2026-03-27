@@ -243,6 +243,56 @@
   font-style: italic;
 }
 
+/* Timer Button Styles */
+.task-badges {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.timer-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-variant-numeric: tabular-nums;
+  margin-left: 8px;
+}
+
+.timer-btn.stopped {
+  background: rgba(139, 148, 158, 0.1);
+  color: var(--text-secondary);
+  border-color: rgba(139, 148, 158, 0.3);
+}
+
+.timer-btn.stopped:hover {
+  background: rgba(88, 166, 255, 0.15);
+  border-color: rgba(88, 166, 255, 0.4);
+  color: #58a6ff;
+}
+
+.timer-btn.running {
+  background: rgba(248, 81, 73, 0.1);
+  color: #ff7b72;
+  border-color: rgba(248, 81, 73, 0.4);
+  animation: timerPulse 2s ease-in-out infinite;
+}
+
+.timer-btn.running:hover {
+  background: rgba(248, 81, 73, 0.2);
+}
+
+@keyframes timerPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(248,81,73,0); }
+  50% { box-shadow: 0 0 8px rgba(248,81,73,0.3); }
+}
+
 /* Responsive card layout for small screens */
 @media (max-width: 1200px) {
   .task-row {
