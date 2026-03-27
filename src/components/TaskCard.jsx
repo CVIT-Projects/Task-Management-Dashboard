@@ -50,6 +50,22 @@ function TaskCard({ task }) {
 
       <div className="col-name">
         <span className="task-name">{task.taskName}</span>
+        
+        {task.estimatedHours && (
+          <div className="estimate-bar-container">
+            <div 
+              className="estimate-fill" 
+              style={{ 
+                width: `${Math.min(100, ((task.trackedSeconds || 0) / 3600 / task.estimatedHours) * 100)}%`,
+                background: ((task.trackedSeconds || 0) / 3600) > task.estimatedHours ? '#ff7b72' : '#3fb950'
+              }}
+            />
+            <span className="estimate-label">
+              {((task.trackedSeconds || 0) / 3600).toFixed(1)}h / {task.estimatedHours}h
+            </span>
+          </div>
+        )}
+
         <div className="task-badges">
           {overdue && <span className="overdue-badge">Overdue</span>}
           {task.status && (

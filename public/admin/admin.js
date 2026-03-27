@@ -133,6 +133,7 @@ async function handleSubmit(e) {
     assignedTo: document.getElementById('assignedTo').value || null,
     startDateTime: document.getElementById('startDateTime').value,
     deadline: document.getElementById('deadline').value,
+    estimatedHours: document.getElementById('estimatedHours').value ? Number(document.getElementById('estimatedHours').value) : null,
     endTime: document.getElementById('endTime').value || null,
     priority: document.getElementById('priority').value,
   };
@@ -172,6 +173,7 @@ function populateEditForm(task) {
   document.getElementById('assignedTo').value = assignedId;
   document.getElementById('startDateTime').value = toDatetimeLocal(task.startDateTime);
   document.getElementById('deadline').value = toDatetimeLocal(task.deadline);
+  document.getElementById('estimatedHours').value = task.estimatedHours || '';
   document.getElementById('endTime').value = task.endTime ? toDatetimeLocal(task.endTime) : '';
   document.getElementById('priority').value = task.priority;
   document.getElementById('fileName').value = task.notes?.fileName || '';
