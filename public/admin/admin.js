@@ -156,6 +156,7 @@ async function handleSubmit(e) {
     estimatedHours: document.getElementById('estimatedHours').value ? Number(document.getElementById('estimatedHours').value) : null,
     endTime: document.getElementById('endTime').value || null,
     priority: document.getElementById('priority').value,
+    isBillable: document.getElementById('isBillable').checked,
   };
 
   // Only include notes if both fields are filled — never send null
@@ -200,6 +201,7 @@ function populateEditForm(task) {
   document.getElementById('estimatedHours').value = task.estimatedHours || '';
   document.getElementById('endTime').value = task.endTime ? toDatetimeLocal(task.endTime) : '';
   document.getElementById('priority').value = task.priority;
+  document.getElementById('isBillable').checked = !!task.isBillable;
   document.getElementById('fileName').value = task.notes?.fileName || '';
   document.getElementById('downloadUrl').value = task.notes?.downloadUrl || '';
 
@@ -298,6 +300,7 @@ function buildTaskCard(task) {
         <div class="meta-item">
           <span class="meta-label">Priority</span>
           <span class="priority-badge ${priorityClass}">${priorityIcon} ${task.priority}</span>
+          ${task.isBillable ? '<span class="priority-badge" style="background:#10b981; color:#fff">💰 Billable</span>' : ''}
         </div>
         <div class="meta-item">
           <span class="meta-label">Start</span>

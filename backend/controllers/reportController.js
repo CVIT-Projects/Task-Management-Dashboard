@@ -158,3 +158,59 @@ export const getDetailedReport = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Get billing summary (totals)
+// @route   GET /api/reports/billing
+// @access  Private
+export const getBillingSummary = async (req, res, next) => {
+  try {
+    const { from, to, userId, projectId } = req.query;
+    const filter = {};
+
+    if (req.user.role !== 'admin') {
+      filter.user = req.user.id;
+    } else if (userId) {
+      filter.user = userId;
+    }
+
+    if (from || to) {
+      filter.startTime = {};
+      if (from) filter.startTime.$gte = new Date(from);
+      if (to) {
+        const toDate = new Date(to);
+        toDate.setHours(23, 59, 59, 999);
+        filter.startTime.$lte = toDate;
+      }
+    }
+
+    const entries = await TimeEntry.find(filter).populate('task');
+    const filtered = projectId 
+      ? entries.filter(e => e.task?.project?.toString() === projectId)
+      : entries;
+
+    let totalSeconds = 0;
+    let billableSeconds = 0;
+    let nonBillableSeconds = 0;
+    let totalEarned = 0;
+
+    filtered.forEach(e => {
+       const d = e.duration || 0;
+       totalSeconds += d;
+       if (e.billable) {
+         billableSeconds += d;
+         totalEarned += e.earnedAmount || 0;
+       } else {
+         nonBillableSeconds += d;
+       }
+    });
+
+    res.json({
+      totalHours: totalSeconds / 3600,
+      billableHours: billableSeconds / 3600,
+      nonBillableHours: nonBillableSeconds / 3600,
+      totalEarned: totalEarned
+    });
+  } catch (error) {
+    next(error);
+  }
+};

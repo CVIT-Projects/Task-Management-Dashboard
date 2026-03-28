@@ -41,6 +41,7 @@ export default function Analytics() {
   // Data
   const [summary, setSummary] = useState([]);
   const [detailed, setDetailed] = useState([]);
+  const [billing, setBilling] = useState({ totalEarned: 0, billableHours: 0 });
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -56,14 +57,15 @@ export default function Analytics() {
       setLoading(true);
       try {
         const query = `from=${formatISO(startDate)}&to=${formatISO(endDate)}&groupBy=${groupBy}&projectId=${selectedProjectId}`;
-        
-        const [sumRes, detRes] = await Promise.all([
+        const [sumRes, detRes, billRes] = await Promise.all([
           axios.get(`${API_BASE}/api/reports/summary?${query}`, { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get(`${API_BASE}/api/reports/detailed?${query}`, { headers: { Authorization: `Bearer ${token}` } })
+          axios.get(`${API_BASE}/api/reports/detailed?${query}`, { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get(`${API_BASE}/api/reports/billing?${query}`, { headers: { Authorization: `Bearer ${token}` } })
         ]);
 
         setSummary(sumRes.data);
         setDetailed(detRes.data);
+        setBilling(billRes.data);
       } catch (err) {
         console.error('Failed to load report', err);
       } finally {
@@ -182,12 +184,14 @@ export default function Analytics() {
               <div className="value">{totalHours}</div>
             </div>
             <div className="stat-box">
-              <div className="label">Billable (High Priority)</div>
-              <div className="value">{billableHours}</div>
+              <div className="label">Billable Hrs</div>
+              <div className="value" style={{ color: 'var(--success)' }}>{billableHours}</div>
             </div>
-            <div className="stat-box">
-              <div className="label">Active Projects</div>
-              <div className="value">{projects.length}</div>
+            <div className="stat-box" style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+              <div className="label">Total Earned</div>
+              <div className="value" style={{ color: '#10b981' }}>
+                ${(billing.totalEarned || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
             </div>
           </div>
 

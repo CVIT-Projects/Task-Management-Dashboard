@@ -44,6 +44,10 @@ const taskSchema = new mongoose.Schema({
     enum: ['Not Started', 'In Progress', 'Completed', 'Blocked'],
     default: 'Not Started'
   },
+  isBillable: {
+    type: Boolean,
+    default: false
+  },
   notes: {
     fileName: String,
     downloadUrl: String

@@ -9,6 +9,8 @@ const timeEntrySchema = new mongoose.Schema(
     duration: { type: Number, default: 0 }, // in seconds, calculated on stop
     description: { type: String, default: '' },
     billable: { type: Boolean, default: false },
+    hourlyRate: { type: Number, default: 0 },
+    earnedAmount: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

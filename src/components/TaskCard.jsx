@@ -56,6 +56,12 @@ function TaskCard({ task }) {
         )}
         <span className="task-name">{task.taskName}</span>
         
+        {task.isBillable && (
+          <span className="project-badge" style={{ background: '#10b981', marginLeft: '8px' }}>
+            <span style={{ fontWeight: 'bold' }}>$</span> Billable
+          </span>
+        )}
+        
         {task.estimatedHours && (
           <div className="estimate-bar-container">
             <div 

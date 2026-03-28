@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manage Users | Admin Panel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="header-brand">
+      <span class="brand-icon">👥</span>
+      <div>
+        <h1>Manage Users</h1>
+        <span class="brand-badge" style="background:var(--accent);">Billing & Rates</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <a href="/admin/index.html" class="view-dashboard-btn" style="background:var(--surface); margin-right: 10px;">
+        ⬅ Back to Tasks
+      </a>
+      <a href="/" target="_blank" class="view-dashboard-btn">
+        📋 View Dashboard
+      </a>
+    </div>
+  </header>
+
+  <div class="layout" style="grid-template-columns: 350px 1fr;">
+    <aside class="form-panel">
+      <div class="panel-header">
+        <h2 id="formTitle">✏️ Update Hourly Rate</h2>
+        <button class="cancel-btn hidden" id="cancelEditBtn" onclick="cancelEdit()">✕ Cancel</button>
+      </div>
+      <form id="userForm" onsubmit="handleSubmit(event)">
+        <input type="hidden" id="userId" />
+
+        <div class="form-group">
+          <label>Selected User</label>
+          <input type="text" id="userName" disabled style="background: var(--bg-hover); color: var(--text-muted);" placeholder="Select a user from the list ➔" />
+        </div>
+
+        <div class="form-group">
+          <label for="hourlyRate">Hourly Rate ($) <span class="required">*</span></label>
+          <input type="number" id="hourlyRate" placeholder="e.g. 50" step="1" min="0" required />
+        </div>
+
+        <button type="submit" class="submit-btn" id="submitBtn" disabled>
+          <span>💾 Set Rate</span>
+        </button>
+      </form>
+    </aside>
+
+    <main class="list-panel">
+      <div class="list-header">
+        <div class="list-title-row">
+          <h2>Team Members <span class="task-count-badge" id="userCount">0</span></h2>
+        </div>
+      </div>
+      <div id="userList" class="task-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
+        <!-- Filled by users.js -->
+        <div class="loading-skeleton">
+          <div class="skel-card"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="toast hidden" id="toast"><span id="toastMessage"></span></div>
+  <script src="users.js?v=2"></script>
+</body>
+</html>

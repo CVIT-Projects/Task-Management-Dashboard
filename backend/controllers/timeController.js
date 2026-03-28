@@ -1,4 +1,6 @@
 import TimeEntry from '../models/TimeEntry.js';
+import Task from '../models/Task.js';
+import User from '../models/User.js';
 
 // @desc    Start a new timer for a task
 // @route   POST /api/time-entries/start
@@ -16,11 +18,18 @@ export const startTimer = async (req, res, next) => {
       await activeTimer.save();
     }
 
-    // Start new timer
+    // Fetch Task and User to capture snapshot pricing
+    const taskObj = await Task.findById(taskId);
+    if (!taskObj) return res.status(404).json({ message: 'Task not found' });
+    const fullUser = await User.findById(req.user.id);
+
+    // Start new timer natively inheriting billing rules
     const newEntry = await TimeEntry.create({
       task: taskId,
       user: req.user.id,
-      startTime: new Date()
+      startTime: new Date(),
+      billable: taskObj.isBillable || false,
+      hourlyRate: fullUser ? (fullUser.hourlyRate || 0) : 0
     });
 
     res.status(201).json({ message: 'Timer started', entry: newEntry, previousStopped: !!activeTimer });
@@ -41,6 +50,13 @@ export const stopTimer = async (req, res, next) => {
 
     entry.endTime = new Date();
     entry.duration = Math.floor((entry.endTime - entry.startTime) / 1000);
+    
+    // Auto-compute earnedAmount based on snapshotted rate
+    if (entry.billable) {
+      const hours = entry.duration / 3600;
+      entry.earnedAmount = hours * entry.hourlyRate;
+    }
+
     await entry.save();
 
     res.json(entry);
@@ -120,12 +136,26 @@ export const createManualEntry = async (req, res, next) => {
             return res.status(400).json({ message: 'End time must be after start time' });
         }
 
+        // Check task for manual entry snapshotting
+        const taskObj = await Task.findById(taskId);
+        const fullUser = await User.findById(req.user.id);
+        const billable = taskObj ? taskObj.isBillable : false;
+        const rate = fullUser ? (fullUser.hourlyRate || 0) : 0;
+        let earnedAmount = 0;
+        
+        if (billable) {
+            earnedAmount = (duration / 3600) * rate;
+        }
+
         const newEntry = await TimeEntry.create({
             task: taskId,
             user: req.user.id,
             startTime: start,
             endTime: end,
-            duration
+            duration,
+            billable,
+            hourlyRate: rate,
+            earnedAmount
         });
 
         res.status(201).json(newEntry);
