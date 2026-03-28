@@ -39,6 +39,7 @@ async function init() {
     document.getElementById('adminUserName').textContent = currentUser.name;
   }
   await fetchUsers();
+  await fetchProjects();
   await fetchTasks();
   setInterval(fetchTasks, 10000);
 }
@@ -60,6 +61,24 @@ async function fetchUsers() {
     });
   } catch (e) {
     console.warn('Could not load users for dropdown:', e.message);
+  }
+}
+
+async function fetchProjects() {
+  try {
+    const res = await fetch(`${API_BASE}/api/projects`, { headers: getAuthHeaders() });
+    if (!res.ok) return;
+    const projects = await res.json();
+    const select = document.getElementById('project');
+    select.innerHTML = '<option value="">-- No Project --</option>';
+    projects.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id || p._id;
+      opt.textContent = p.name;
+      select.appendChild(opt);
+    });
+  } catch (e) {
+    console.warn('Could not load projects for dropdown:', e.message);
   }
 }
 
@@ -131,6 +150,7 @@ async function handleSubmit(e) {
   const data = {
     taskName: document.getElementById('taskName').value.trim(),
     assignedTo: document.getElementById('assignedTo').value || null,
+    project: document.getElementById('project').value || null,
     startDateTime: document.getElementById('startDateTime').value,
     deadline: document.getElementById('deadline').value,
     estimatedHours: document.getElementById('estimatedHours').value ? Number(document.getElementById('estimatedHours').value) : null,
@@ -171,6 +191,10 @@ function populateEditForm(task) {
   // Pre-select the correct user in the dropdown
   const assignedId = task.assignedTo?._id || task.assignedTo?.id || task.assignedTo || '';
   document.getElementById('assignedTo').value = assignedId;
+
+  const projectId = task.project?._id || task.project?.id || task.project || '';
+  document.getElementById('project').value = projectId;
+
   document.getElementById('startDateTime').value = toDatetimeLocal(task.startDateTime);
   document.getElementById('deadline').value = toDatetimeLocal(task.deadline);
   document.getElementById('estimatedHours').value = task.estimatedHours || '';
