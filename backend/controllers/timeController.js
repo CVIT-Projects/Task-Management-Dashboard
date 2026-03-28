@@ -54,17 +54,33 @@ export const stopTimer = async (req, res, next) => {
 // @access  Private
 export const getMyTimeEntries = async (req, res, next) => {
   try {
-    const filter = { user: req.user.id };
+    const filter = {};
+    
+    // Admin override support for Timesheet
+    if (req.user.role === 'admin' && req.query.user) {
+      filter.user = req.query.user === 'me' ? req.user.id : req.query.user;
+    } else {
+      filter.user = req.user.id;
+    }
+    
     if (req.query.taskId) filter.task = req.query.taskId;
 
     // Optional date range filtering could be added here
     if (req.query.from || req.query.to) {
         filter.startTime = {};
         if (req.query.from) filter.startTime.$gte = new Date(req.query.from);
-        if (req.query.to) filter.startTime.$lte = new Date(req.query.to);
+        // Include the entire end day
+        if (req.query.to) {
+          const toDate = new Date(req.query.to);
+          toDate.setHours(23, 59, 59, 999);
+          filter.startTime.$lte = toDate;
+        }
     }
 
-    const entries = await TimeEntry.find(filter).sort({ startTime: -1 });
+    const entries = await TimeEntry.find(filter)
+      .populate('task', 'taskName')
+      .sort({ startTime: -1 });
+      
     res.json(entries);
   } catch (error) {
     next(error);

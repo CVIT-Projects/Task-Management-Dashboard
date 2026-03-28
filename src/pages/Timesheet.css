@@ -1,0 +1,128 @@
+/* src/pages/Timesheet.css */
+.timesheet-container {
+  padding: 0 24px 40px;
+  max-width: 1400px;
+  margin: 0 auto;
+  color: var(--text-primary);
+  animation: fadeIn 0.4s ease-out;
+}
+
+.timesheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  background: var(--bg-hover);
+  padding: 16px 24px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.week-nav {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.week-nav button {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+}
+
+.week-nav button:hover {
+  background: var(--border);
+  color: #fff;
+}
+
+.week-nav span {
+  font-weight: 600;
+  font-size: 1.1rem;
+  min-width: 250px;
+  text-align: center;
+  color: var(--accent);
+}
+
+.user-switcher select {
+  padding: 8px 16px;
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  font-size: 0.9rem;
+  min-width: 200px;
+  cursor: pointer;
+}
+
+.timesheet-table-wrapper {
+  overflow-x: auto;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.timesheet-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: right;
+}
+
+.timesheet-table th, .timesheet-table td {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.timesheet-table th {
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--bg-hover);
+  letter-spacing: 0.5px;
+}
+
+.timesheet-table th.task-col, .timesheet-table td.task-col {
+  text-align: left;
+  width: 30%;
+  border-right: 1px solid var(--border);
+}
+
+.timesheet-table td.task-col {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.timesheet-table tbody tr {
+  transition: background 0.2s;
+}
+
+.timesheet-table tbody tr:hover td {
+  background: rgba(255,255,255,0.02);
+}
+
+.empty-cell {
+  color: #4b5563; /* subtle muted dash */
+}
+
+.total-row {
+  background: rgba(99, 102, 241, 0.1);
+  font-weight: 700;
+}
+
+.total-row td {
+  color: var(--accent);
+  border-bottom: none;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

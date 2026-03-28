@@ -25,34 +25,38 @@ function Navbar({ searchTerm, onSearchChange, priorityFilter, onPriorityChange, 
       </div>
 
       <div className="navbar-controls">
-        <div className="search-wrapper">
-          <span className="search-icon">🔍</span>
-          <input
-            type="text"
-            className="search-input"
-            placeholder="Search by task or person..."
-            value={searchTerm}
-            onChange={(e) => onSearchChange(e.target.value)}
-          />
-          {searchTerm && (
-            <button className="clear-btn" onClick={() => onSearchChange('')}>✕</button>
-          )}
-        </div>
+        {onSearchChange && (
+          <div className="search-wrapper">
+            <span className="search-icon">🔍</span>
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Search by task or person..."
+              value={searchTerm}
+              onChange={(e) => onSearchChange(e.target.value)}
+            />
+            {searchTerm && (
+              <button className="clear-btn" onClick={() => onSearchChange('')}>✕</button>
+            )}
+          </div>
+        )}
 
-        <div className="filter-wrapper">
-          <label htmlFor="priority-filter" className="filter-label">Priority</label>
-          <select
-            id="priority-filter"
-            className="priority-select"
-            value={priorityFilter}
-            onChange={(e) => onPriorityChange(e.target.value)}
-          >
-            <option value="All">All</option>
-            <option value="High">🔴 High</option>
-            <option value="Medium">🟠 Medium</option>
-            <option value="Low">🟢 Low</option>
-          </select>
-        </div>
+        {onPriorityChange && (
+          <div className="filter-wrapper">
+            <label htmlFor="priority-filter" className="filter-label">Priority</label>
+            <select
+              id="priority-filter"
+              className="priority-select"
+              value={priorityFilter}
+              onChange={(e) => onPriorityChange(e.target.value)}
+            >
+              <option value="All">All</option>
+              <option value="High">🔴 High</option>
+              <option value="Medium">🟠 Medium</option>
+              <option value="Low">🟢 Low</option>
+            </select>
+          </div>
+        )}
       </div>
 
       <div className="navbar-meta">
@@ -61,12 +65,15 @@ function Navbar({ searchTerm, onSearchChange, priorityFilter, onPriorityChange, 
           <span>tasks</span>
         </div>
         <div className="refresh-info">
-          <span className="pulse-dot"></span>
-          <span>Updated {formattedTime}</span>
+          <span className="pulse-dot" style={{ display: lastUpdated ? 'inline-block' : 'none' }}></span>
+          <span>{lastUpdated ? `Updated ${formattedTime}` : 'Not Polling'}</span>
         </div>
 
+        <button className="admin-link-btn" onClick={() => navigate('/')} style={{ background: 'transparent' }}>📊 Dashboard</button>
+        <button className="admin-link-btn" onClick={() => navigate('/timesheet')} style={{ background: 'transparent', marginLeft: '10px' }}>🕒 Timesheet</button>
+
         {user?.role === 'admin' && (
-          <a href="/admin/" className="admin-link-btn">Admin Panel</a>
+          <a href="/admin/" className="admin-link-btn" style={{ marginLeft: '10px' }}>⚙️ Admin Panel</a>
         )}
 
         <div className="user-section">

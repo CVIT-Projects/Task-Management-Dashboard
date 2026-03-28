@@ -5,6 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import Timesheet from './pages/Timesheet';
 import './App.css'; // Keep global CSS logic
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
             <Route path="/login"    element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/"         element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/timesheet" element={<ProtectedRoute><Timesheet /></ProtectedRoute>} />
             
             {/* Catch-all route gracefully redirects 404s back to Dashboard (which triggers auth checks) */}
             <Route path="*"         element={<Navigate to="/" replace />} />
