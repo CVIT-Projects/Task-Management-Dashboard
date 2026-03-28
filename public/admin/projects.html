@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manage Projects</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="admin.css" />
+  <style>
+    .color-preview { display: inline-block; width: 14px; height: 14px; border-radius: 50%; vertical-align: middle; margin-right: 8px; border: 1px solid rgba(255,255,255,0.2); }
+  </style>
+</head>
+<body>
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-brand">
+      <span class="brand-icon">📁</span>
+      <div>
+        <h1>Manage Projects</h1>
+        <span class="brand-badge" style="background: var(--accent)">Projects Data</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <a href="/admin/" class="view-dashboard-btn" style="margin-right: 10px; background: transparent; border: 1px solid var(--border); color: var(--text-primary);">
+        ⚙️ Manage Tasks
+      </a>
+      <a href="/" target="_blank" class="view-dashboard-btn">
+        📋 View Dashboard
+      </a>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <div class="layout">
+    <aside class="form-panel">
+      <div class="panel-header">
+        <h2 id="formTitle">➕ Add New Project</h2>
+        <button class="cancel-btn hidden" id="cancelEditBtn" onclick="cancelEdit()">✕ Cancel</button>
+      </div>
+
+      <form id="projectForm" onsubmit="handleSubmit(event)">
+        <input type="hidden" id="projectId" />
+
+        <div class="form-group">
+          <label for="name">Project Name <span class="required">*</span></label>
+          <input type="text" id="name" placeholder="e.g. Website Redesign" required />
+        </div>
+
+        <div class="form-group">
+          <label for="color">Badge Color</label>
+          <input type="color" id="color" value="#6366f1" style="height: 40px; padding: 2px; width: 100%; cursor: pointer;" />
+        </div>
+
+        <div class="form-group">
+          <label for="status">Status</label>
+          <select id="status">
+            <option value="Active">Active</option>
+            <option value="Archived">Archived</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="description">Detailed Description</label>
+          <textarea id="description" placeholder="Project details, objectives, or scopes..." rows="4"></textarea>
+        </div>
+
+        <button type="submit" class="submit-btn" id="submitBtn">
+          <span>➕ Add Project</span>
+        </button>
+      </form>
+    </aside>
+
+    <main class="list-panel">
+      <div class="list-header">
+        <div class="list-title-row">
+          <h2>All Projects <span class="task-count-badge" id="projectCount">0</span></h2>
+        </div>
+      </div>
+      <div id="projectList" class="task-list"></div>
+    </main>
+  </div>
+
+  <div class="toast hidden" id="toast">
+    <span id="toastMessage"></span>
+  </div>
+
+  <script src="projects.js"></script>
+</body>
+</html>

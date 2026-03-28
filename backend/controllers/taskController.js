@@ -21,8 +21,13 @@ export const getTasks = async (req, res, next) => {
       filter.assignedTo = req.user.id;
     }
 
+    if (req.query.project) {
+      filter.project = req.query.project;
+    }
+
     // Find tasks, populate, and sort
     const tasks = await Task.find(filter)
+      .populate('project', 'name color')
       .populate('assignedTo', 'name email')
       .populate('createdBy', 'name email')
       .sort({ deadline: 1 });
@@ -48,6 +53,7 @@ export const getTasks = async (req, res, next) => {
 export const getTask = async (req, res, next) => {
   try {
     const task = await Task.findById(req.params.id)
+      .populate('project', 'name color')
       .populate('assignedTo', 'name email')
       .populate('createdBy', 'name email');
     if (!task) {

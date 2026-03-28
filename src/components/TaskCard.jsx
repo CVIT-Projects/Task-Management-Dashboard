@@ -49,6 +49,11 @@ function TaskCard({ task }) {
       </div>
 
       <div className="col-name">
+        {task.project && (
+          <span className="project-badge" style={{ background: task.project.color }}>
+            {task.project.name}
+          </span>
+        )}
         <span className="task-name">{task.taskName}</span>
         
         {task.estimatedHours && (

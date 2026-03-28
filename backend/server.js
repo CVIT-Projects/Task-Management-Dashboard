@@ -8,6 +8,7 @@ import authRoutes from './routes/auth.js';
 import taskRoutes from './routes/tasks.js';
 import userRoutes from './routes/users.js';
 import timeEntryRoutes from './routes/timeEntries.js';
+import projectRoutes from './routes/projects.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -34,6 +35,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/time-entries', timeEntryRoutes);
+app.use('/api/projects', projectRoutes);
 
 // Serve React production build
 app.use(express.static(path.join(__dirname, '../dist')));

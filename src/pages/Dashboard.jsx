@@ -19,12 +19,30 @@ function Dashboard() {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('All');
+  const [projects, setProjects] = useState([]);
+  const [projectFilter, setProjectFilter] = useState('all');
   const { token, user, logout } = useAuth();
+
+  const fetchProjects = useCallback(async () => {
+    try {
+      if (!token) return;
+      const res = await axios.get(`${API_BASE}/api/projects`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setProjects(res.data);
+    } catch (err) {
+      console.error('Fetch projects error:', err);
+    }
+  }, [token]);
 
   const fetchTasks = useCallback(async (isInitial = false) => {
     if (isInitial) setLoading(true);
     try {
-      const response = await axios.get(TASKS_API, {
+      let url = TASKS_API;
+      if (projectFilter !== 'all') {
+        url += `?project=${projectFilter}`;
+      }
+      const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setTasks(response.data);
@@ -40,13 +58,17 @@ function Dashboard() {
     } finally {
       if (isInitial) setLoading(false);
     }
-  }, [token]);
+  }, [token, projectFilter, logout]);
 
   useEffect(() => {
+    fetchProjects();
     fetchTasks(true);
-    const interval = setInterval(() => fetchTasks(false), POLL_INTERVAL);
+    const interval = setInterval(() => {
+      fetchProjects();
+      fetchTasks(false);
+    }, POLL_INTERVAL);
     return () => clearInterval(interval);
-  }, [fetchTasks]);
+  }, [fetchTasks, fetchProjects]);
 
   const processedTasks = tasks
     .filter((task) => {
@@ -84,7 +106,19 @@ function Dashboard() {
             <p>{error}</p>
           </div>
         ) : (
-          <TaskTable tasks={processedTasks} user={user} />
+          <>
+            <div className="project-filter-container" style={{ padding: '0 20px 10px', display: 'flex', justifyContent: 'flex-end' }}>
+              <select 
+                value={projectFilter} 
+                onChange={(e) => setProjectFilter(e.target.value)}
+                style={{ padding: '6px 12px', borderRadius: '6px', background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
+              >
+                <option value="all">All Projects</option>
+                {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+            <TaskTable tasks={processedTasks} user={user} />
+          </>
         )}
       </main>
     </div>
