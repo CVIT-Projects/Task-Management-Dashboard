@@ -157,6 +157,10 @@ async function handleSubmit(e) {
     endTime: document.getElementById('endTime').value || null,
     priority: document.getElementById('priority').value,
     isBillable: document.getElementById('isBillable').checked,
+    tags: document.getElementById('tags').value
+      .split(',')
+      .map(t => t.trim().toLowerCase())
+      .filter(Boolean),
   };
 
   // Only include notes if both fields are filled — never send null
@@ -204,6 +208,7 @@ function populateEditForm(task) {
   document.getElementById('isBillable').checked = !!task.isBillable;
   document.getElementById('fileName').value = task.notes?.fileName || '';
   document.getElementById('downloadUrl').value = task.notes?.downloadUrl || '';
+  document.getElementById('tags').value = (task.tags || []).join(', ');
 
   document.getElementById('taskForm').scrollIntoView({ behavior: 'smooth' });
 }
@@ -318,6 +323,11 @@ function buildTaskCard(task) {
           <span class="meta-label">File</span>
           ${attachmentHTML}
         </div>
+        ${task.tags && task.tags.length > 0 ? `
+        <div class="meta-item" style="grid-column: 1/-1;">
+          <span class="meta-label">Tags</span>
+          <span class="tags-row">${task.tags.map(t => `<span class="tag-chip">${escapeHtml(t)}</span>`).join('')}</span>
+        </div>` : ''}
       </div>
     </div>`;
 }

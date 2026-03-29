@@ -21,6 +21,7 @@ function Dashboard() {
   const [priorityFilter, setPriorityFilter] = useState('All');
   const [projects, setProjects] = useState([]);
   const [projectFilter, setProjectFilter] = useState('all');
+  const [tagFilter, setTagFilter] = useState('all');
   const { token, user, logout } = useAuth();
 
   const fetchProjects = useCallback(async () => {
@@ -79,7 +80,9 @@ function Dashboard() {
         assignedName.toLowerCase().includes(term);
       const matchesPriority =
         priorityFilter === 'All' || task.priority === priorityFilter;
-      return matchesSearch && matchesPriority;
+      const matchesTag =
+        tagFilter === 'all' || (task.tags && task.tags.includes(tagFilter));
+      return matchesSearch && matchesPriority && matchesTag;
     })
     .sort((a, b) => {
       const deadlineDiff = new Date(a.deadline) - new Date(b.deadline);
@@ -107,9 +110,19 @@ function Dashboard() {
           </div>
         ) : (
           <>
-            <div className="project-filter-container" style={{ padding: '0 20px 10px', display: 'flex', justifyContent: 'flex-end' }}>
-              <select 
-                value={projectFilter} 
+            <div className="project-filter-container" style={{ padding: '0 20px 10px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <select
+                value={tagFilter}
+                onChange={(e) => setTagFilter(e.target.value)}
+                style={{ padding: '6px 12px', borderRadius: '6px', background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
+              >
+                <option value="all">All Tags</option>
+                {[...new Set(tasks.flatMap(t => t.tags || []))].sort().map(tag => (
+                  <option key={tag} value={tag}>{tag}</option>
+                ))}
+              </select>
+              <select
+                value={projectFilter}
                 onChange={(e) => setProjectFilter(e.target.value)}
                 style={{ padding: '6px 12px', borderRadius: '6px', background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
               >

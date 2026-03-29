@@ -52,6 +52,10 @@ const taskSchema = new mongoose.Schema({
     fileName: String,
     downloadUrl: String
   },
+  tags: {
+    type: [String],
+    default: []
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

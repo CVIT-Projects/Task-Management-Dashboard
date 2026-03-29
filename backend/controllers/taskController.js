@@ -25,6 +25,10 @@ export const getTasks = async (req, res, next) => {
       filter.project = req.query.project;
     }
 
+    if (req.query.tag) {
+      filter.tags = req.query.tag;
+    }
+
     // Find tasks, populate, and sort
     const tasks = await Task.find(filter)
       .populate('project', 'name color')

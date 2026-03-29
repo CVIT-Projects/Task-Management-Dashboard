@@ -368,3 +368,23 @@
   .col-priority::before { content: 'Priority: '; font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; width: 90px; }
   .col-notes::before { content: 'File: '; font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; width: 90px; }
 }
+
+/* Tags */
+.task-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.tag-chip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: rgba(99, 102, 241, 0.15);
+  color: #818cf8;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  text-transform: lowercase;
+}

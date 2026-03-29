@@ -77,6 +77,14 @@ function TaskCard({ task }) {
           </div>
         )}
 
+        {task.tags && task.tags.length > 0 && (
+          <div className="task-tags">
+            {task.tags.map(tag => (
+              <span key={tag} className="tag-chip">{tag}</span>
+            ))}
+          </div>
+        )}
+
         <div className="task-badges">
           {overdue && <span className="overdue-badge">Overdue</span>}
           {task.status && (
