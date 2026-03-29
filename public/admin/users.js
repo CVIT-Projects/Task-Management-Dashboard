@@ -1,6 +1,9 @@
 const token = localStorage.getItem('authToken');
 if (!token) window.location.href = '/login';
 
+const _usersUser = (() => { try { return JSON.parse(localStorage.getItem('authUser')); } catch { return null; } })();
+if (!_usersUser || _usersUser.role !== 'admin') window.location.href = '/';
+
 let allUsers = [];
 
 function getAuthHeaders() {

@@ -36,14 +36,19 @@ export const getTasks = async (req, res, next) => {
       .populate('createdBy', 'name email')
       .sort({ deadline: 1 });
 
-    // Aggregate tracked time for each task using Promise.all
-    const tasksWithTracked = await Promise.all(
-      tasks.map(async (task) => {
-        const entries = await TimeEntry.find({ task: task._id });
-        const trackedSeconds = entries.reduce((sum, e) => sum + (e.duration || 0), 0);
-        return { ...task.toJSON(), trackedSeconds };
-      })
-    );
+    // Single aggregation to get total tracked seconds per task (avoids N+1 queries)
+    const taskIds = tasks.map(t => t._id);
+    const trackedAgg = await TimeEntry.aggregate([
+      { $match: { task: { $in: taskIds } } },
+      { $group: { _id: '$task', trackedSeconds: { $sum: '$duration' } } }
+    ]);
+    const trackedMap = {};
+    trackedAgg.forEach(t => { trackedMap[String(t._id)] = t.trackedSeconds; });
+
+    const tasksWithTracked = tasks.map(task => ({
+      ...task.toJSON(),
+      trackedSeconds: trackedMap[String(task._id)] || 0
+    }));
 
     res.json(tasksWithTracked);
   } catch (error) {

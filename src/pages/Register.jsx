@@ -86,8 +86,8 @@ const Register = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required 
-              placeholder="Min. 6 characters"
-              minLength={6}
+              placeholder="Min. 8 characters"
+              minLength={8}
             />
           </div>
 

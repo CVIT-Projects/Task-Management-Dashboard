@@ -18,7 +18,7 @@ env_variables:
   # Do NOT put real secrets here.
   # Replace these placeholders before deploying.
   # Use Secret Manager or Cloud Run env vars for real values.
-  MONGO_URI: "mongodb+srv://taskadmin:SECRET_PASSWORD_MANAGER@task-dashboard.uvt5dv1.mongodb.net/task-dashboard?appName=task-dashboard"
+  MONGO_URI: "REPLACE_WITH_MONGODB_URI"
   JWT_SECRET: "REPLACE_WITH_LONG_RANDOM_STRING"
   ADMIN_SECRET: "REPLACE_WITH_ADMIN_SECRET"
   JWT_EXPIRES_IN: "1d"

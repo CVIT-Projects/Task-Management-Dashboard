@@ -1,11 +1,24 @@
 const token = localStorage.getItem('authToken');
 if (!token) window.location.href = '/login';
 
+const _projectsUser = (() => { try { return JSON.parse(localStorage.getItem('authUser')); } catch { return null; } })();
+if (!_projectsUser || _projectsUser.role !== 'admin') window.location.href = '/';
+
 function getAuthHeaders() {
   return {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${token}`,
   };
+}
+
+function handleUnauthorized(status) {
+  if (status === 401 || status === 403) {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('authUser');
+    window.location.href = '/login';
+    return true;
+  }
+  return false;
 }
 
 const API_BASE = window.location.origin;
@@ -19,7 +32,10 @@ async function init() {
 async function fetchProjects() {
   try {
     const res = await fetch(API_URL, { headers: getAuthHeaders() });
-    if (!res.ok) throw new Error('Failed to fetch');
+    if (!res.ok) {
+      if (handleUnauthorized(res.status)) return;
+      throw new Error('Failed to fetch');
+    }
     allProjects = await res.json();
     renderProjects();
   } catch (e) {

@@ -22,7 +22,9 @@ export const TimerProvider = ({ children }) => {
         headers: { Authorization: `Bearer ${token}` }
       });
       // The active timer is the one with no endTime
-      const runningEntry = res.data.find(entry => entry.endTime === null);
+      const runningEntry = Array.isArray(res.data)
+        ? res.data.find(entry => entry.endTime === null)
+        : null;
       setActiveEntry(runningEntry || null);
     } catch (error) {
       console.error('Failed to fetch active timers', error);

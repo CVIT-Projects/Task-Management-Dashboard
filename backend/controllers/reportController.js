@@ -63,7 +63,7 @@ export const getSummaryReport = async (req, res, next) => {
           as: 'taskInfo'
         }
       },
-      { $unwind: '$taskInfo' }
+      { $unwind: { path: '$taskInfo', preserveNullAndEmptyArrays: true } }
     ];
 
     if (groupBy === 'project') {
@@ -145,7 +145,7 @@ export const getDetailedReport = async (req, res, next) => {
           path: 'task',
           populate: { path: 'project', select: 'name color' }
       })
-      .populate('user', 'username name')
+      .populate('user', 'name email')
       .sort({ startTime: -1 });
 
     // Optional project filtering since it's nested

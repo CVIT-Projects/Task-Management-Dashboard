@@ -23,10 +23,15 @@ router.get('/', verifyToken, requireAdmin, async (req, res, next) => {
 router.put('/:id/rate', verifyToken, requireAdmin, async (req, res, next) => {
   try {
     const { hourlyRate } = req.body;
+    const rate = Number(hourlyRate);
+    if (isNaN(rate) || rate < 0 || rate > 99999) {
+      return res.status(400).json({ message: 'Hourly rate must be a number between 0 and 99999' });
+    }
+
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
-    
-    user.hourlyRate = Number(hourlyRate) || 0;
+
+    user.hourlyRate = rate;
     await user.save();
     
     res.json({ message: 'Hourly rate updated', user });

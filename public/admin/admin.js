@@ -1,8 +1,13 @@
 const token = localStorage.getItem('authToken');
-if (!token) window.location.href = '/';
+if (!token) window.location.href = '/login';
 
 const userRaw = localStorage.getItem('authUser');
 const currentUser = userRaw ? JSON.parse(userRaw) : null;
+
+// Enforce admin-only access on the frontend
+if (!currentUser || currentUser.role !== 'admin') {
+  window.location.href = '/';
+}
 
 function getAuthHeaders() {
   return {
@@ -15,7 +20,7 @@ function handleUnauthorized(status) {
   if (status === 401 || status === 403) {
     localStorage.removeItem('authToken');
     localStorage.removeItem('authUser');
-    window.location.href = '/';
+    window.location.href = '/login';
     return true;
   }
   return false;
@@ -280,8 +285,8 @@ function buildTaskCard(task) {
     return new Date(str).toLocaleString([], { month: 'short', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   };
 
-  const attachmentHTML = task.notes
-    ? `<a href="${task.notes.downloadUrl}" target="_blank" class="attachment-chip">⬇ ${task.notes.fileName}</a>`
+  const attachmentHTML = task.notes && isSafeUrl(task.notes.downloadUrl)
+    ? `<a href="${escapeHtml(task.notes.downloadUrl)}" target="_blank" rel="noopener noreferrer" class="attachment-chip">⬇ ${escapeHtml(task.notes.fileName)}</a>`
     : `<span class="no-file">No file</span>`;
 
   return `
@@ -343,6 +348,10 @@ function startEdit(id) {
 
 function escapeHtml(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function isSafeUrl(url) {
+  return typeof url === 'string' && /^https?:\/\//i.test(url);
 }
 
 // ─── Delete Modal ───────────────────────────────────────────────────────────

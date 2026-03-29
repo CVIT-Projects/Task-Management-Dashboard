@@ -31,6 +31,9 @@ export const submitTimesheet = async (req, res, next) => {
 
     res.status(201).json(timesheet);
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({ message: 'A timesheet for this week already exists.' });
+    }
     next(error);
   }
 };
