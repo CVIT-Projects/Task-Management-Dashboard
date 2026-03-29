@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import Navbar from '../components/Navbar';
@@ -38,45 +38,118 @@ const formatDuration = (seconds) => {
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
+const STATUS_STYLES = {
+  submitted: { background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', label: 'Pending Review' },
+  approved:  { background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', label: 'Approved' },
+  rejected:  { background: 'rgba(239, 68, 68, 0.15)',  color: '#ef4444', label: 'Rejected' },
+};
+
 export default function Timesheet() {
   const { token, user } = useAuth();
-  
-  // State
+
   const [currentDate, setCurrentDate] = useState(new Date());
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState('me');
 
+  // Approval workflow state
+  const [weekSubmission, setWeekSubmission] = useState(null); // current user's submission for this week
+  const [pendingSubmissions, setPendingSubmissions] = useState([]); // admin: all pending
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [rejectNote, setRejectNote] = useState('');
+  const [rejectingId, setRejectingId] = useState(null);
+
   const monday = useMemo(() => getMonday(currentDate), [currentDate]);
   const sunday = useMemo(() => getSunday(monday), [monday]);
 
+  const authHeader = { Authorization: `Bearer ${token}` };
+
   useEffect(() => {
-    // If admin, fetch users for the dropdown
     if (user?.role === 'admin') {
-      axios.get(`${API_BASE}/api/users`, { headers: { Authorization: `Bearer ${token}` } })
+      axios.get(`${API_BASE}/api/users`, { headers: authHeader })
         .then(res => setUsers(res.data))
         .catch(err => console.error(err));
     }
   }, [user, token]);
 
-  useEffect(() => {
-    const fetchTimesheet = async () => {
-      setLoading(true);
-      try {
-        const url = `${API_BASE}/api/time-entries?from=${formatISO(monday)}&to=${formatISO(sunday)}&user=${selectedUser}`;
-        const res = await axios.get(url, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setEntries(res.data);
-      } catch (error) {
-        console.error('Failed to load timesheet', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (token) fetchTimesheet();
+  const fetchTimesheet = useCallback(async () => {
+    setLoading(true);
+    try {
+      const url = `${API_BASE}/api/time-entries?from=${formatISO(monday)}&to=${formatISO(sunday)}&user=${selectedUser}`;
+      const res = await axios.get(url, { headers: authHeader });
+      setEntries(res.data);
+    } catch (error) {
+      console.error('Failed to load timesheet', error);
+    } finally {
+      setLoading(false);
+    }
   }, [monday, sunday, selectedUser, token]);
+
+  const fetchSubmissionStatus = useCallback(async () => {
+    try {
+      // Fetch current user's submission for this week
+      const res = await axios.get(`${API_BASE}/api/timesheets`, { headers: authHeader });
+      const weekStart = formatISO(monday);
+      const match = res.data.find(ts => formatISO(new Date(ts.weekStart)) === weekStart);
+      setWeekSubmission(match || null);
+    } catch (err) {
+      console.error('Failed to fetch submission status', err);
+    }
+  }, [monday, token]);
+
+  const fetchPendingSubmissions = useCallback(async () => {
+    if (user?.role !== 'admin') return;
+    try {
+      const res = await axios.get(`${API_BASE}/api/timesheets?status=submitted`, { headers: authHeader });
+      setPendingSubmissions(res.data);
+    } catch (err) {
+      console.error('Failed to fetch pending submissions', err);
+    }
+  }, [user, token]);
+
+  useEffect(() => {
+    if (token) {
+      fetchTimesheet();
+      fetchSubmissionStatus();
+      fetchPendingSubmissions();
+    }
+  }, [fetchTimesheet, fetchSubmissionStatus, fetchPendingSubmissions]);
+
+  const handleSubmit = async () => {
+    setSubmitLoading(true);
+    try {
+      await axios.post(`${API_BASE}/api/timesheets/submit`, {
+        weekStart: monday.toISOString(),
+        weekEnd: sunday.toISOString()
+      }, { headers: authHeader });
+      await fetchSubmissionStatus();
+    } catch (err) {
+      console.error('Submit failed', err);
+    } finally {
+      setSubmitLoading(false);
+    }
+  };
+
+  const handleApprove = async (id) => {
+    try {
+      await axios.patch(`${API_BASE}/api/timesheets/${id}/approve`, {}, { headers: authHeader });
+      await fetchPendingSubmissions();
+    } catch (err) {
+      console.error('Approve failed', err);
+    }
+  };
+
+  const handleReject = async (id) => {
+    try {
+      await axios.patch(`${API_BASE}/api/timesheets/${id}/reject`, { adminNote: rejectNote }, { headers: authHeader });
+      setRejectingId(null);
+      setRejectNote('');
+      await fetchPendingSubmissions();
+    } catch (err) {
+      console.error('Reject failed', err);
+    }
+  };
 
   const handlePrevWeek = () => {
     const newDate = new Date(currentDate);
@@ -90,29 +163,24 @@ export default function Timesheet() {
     setCurrentDate(newDate);
   };
 
-  // Aggregation Engine
-  // 1. Group by Task ID
-  // 2. Within each task, array of 7 days
   const aggregatedData = useMemo(() => {
     const taskMap = {};
     const dayTotals = [0, 0, 0, 0, 0, 0, 0];
     let grandTotal = 0;
 
     entries.forEach(entry => {
-      if (!entry.task) return; // Skip orphaned entries completely
+      if (!entry.task) return;
       const taskId = entry.task._id || entry.task;
       const taskName = entry.task.taskName || 'Unknown Task';
-      
+
       if (!taskMap[taskId]) {
         taskMap[taskId] = { taskName, days: [0, 0, 0, 0, 0, 0, 0], totalRow: 0 };
       }
 
-      // Determine day of week (0 = Monday, 6 = Sunday)
       const entryDate = new Date(entry.startTime);
       let dayIndex = entryDate.getDay() - 1;
-      if (dayIndex === -1) dayIndex = 6; // Sunday is 0 in JS Date, mapped safely to 6
+      if (dayIndex === -1) dayIndex = 6;
 
-      // Ignore entries formally processed mathematically outside boundaries
       if (entryDate >= monday && entryDate <= sunday) {
         const dur = entry.duration || 0;
         taskMap[taskId].days[dayIndex] += dur;
@@ -122,38 +190,63 @@ export default function Timesheet() {
       }
     });
 
-    return {
-      rows: Object.values(taskMap),
-      dayTotals,
-      grandTotal
-    };
+    return { rows: Object.values(taskMap), dayTotals, grandTotal };
   }, [entries, monday, sunday]);
+
+  const statusStyle = weekSubmission ? STATUS_STYLES[weekSubmission.status] : null;
 
   return (
     <div className="app-wrapper">
       <Navbar />
       <main className="main-content" style={{ paddingTop: '20px' }}>
         <div className="timesheet-container">
-          
+
           <div className="timesheet-header">
             <div className="week-nav">
               <button onClick={handlePrevWeek}>&larr; Prev Week</button>
               <span>{formatDate(monday)} &ndash; {formatDate(sunday)}</span>
               <button onClick={handleNextWeek}>Next Week &rarr;</button>
             </div>
-            
-            {user?.role === 'admin' && (
-              <div className="user-switcher">
-                <select value={selectedUser} onChange={e => setSelectedUser(e.target.value)}>
-                  <option value="me">My Timesheet</option>
-                  <optgroup label="Team Members">
-                    {users.map(u => (
-                      <option key={u.id} value={u.id}>{u.name}</option>
-                    ))}
-                  </optgroup>
-                </select>
-              </div>
-            )}
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {user?.role === 'admin' && (
+                <div className="user-switcher">
+                  <select value={selectedUser} onChange={e => setSelectedUser(e.target.value)}>
+                    <option value="me">My Timesheet</option>
+                    <optgroup label="Team Members">
+                      {users.map(u => (
+                        <option key={u.id} value={u.id}>{u.name}</option>
+                      ))}
+                    </optgroup>
+                  </select>
+                </div>
+              )}
+
+              {/* Status badge */}
+              {statusStyle && (
+                <span className="submission-status-badge" style={{ background: statusStyle.background, color: statusStyle.color }}>
+                  {statusStyle.label}
+                  {weekSubmission.status === 'rejected' && weekSubmission.adminNote && (
+                    <span style={{ marginLeft: '6px', fontSize: '0.75rem' }}>— {weekSubmission.adminNote}</span>
+                  )}
+                </span>
+              )}
+
+              {/* Submit button — shown to non-admins or admins viewing their own sheet */}
+              {(user?.role !== 'admin' || selectedUser === 'me') && (
+                <button
+                  className="submit-timesheet-btn"
+                  onClick={handleSubmit}
+                  disabled={submitLoading || weekSubmission?.status === 'submitted' || weekSubmission?.status === 'approved'}
+                >
+                  {submitLoading ? 'Submitting…' :
+                    weekSubmission?.status === 'approved' ? 'Approved' :
+                    weekSubmission?.status === 'submitted' ? 'Submitted' :
+                    weekSubmission?.status === 'rejected' ? 'Resubmit' :
+                    'Submit for Approval'}
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="timesheet-table-wrapper">
@@ -205,6 +298,50 @@ export default function Timesheet() {
               </tbody>
             </table>
           </div>
+
+          {/* Admin: Pending Approval Queue */}
+          {user?.role === 'admin' && pendingSubmissions.length > 0 && (
+            <div className="approval-queue">
+              <h3 style={{ color: 'var(--text-primary)', marginBottom: '16px' }}>
+                Pending Approvals ({pendingSubmissions.length})
+              </h3>
+              <div className="approval-list">
+                {pendingSubmissions.map(ts => (
+                  <div key={ts.id} className="approval-card">
+                    <div className="approval-info">
+                      <div className="approval-user">{ts.user?.name}</div>
+                      <div className="approval-week">
+                        {formatDate(new Date(ts.weekStart))} – {formatDate(new Date(ts.weekEnd))}
+                      </div>
+                      <div className="approval-submitted">
+                        Submitted {new Date(ts.submittedAt).toLocaleDateString()}
+                      </div>
+                    </div>
+
+                    <div className="approval-actions">
+                      <button className="approve-btn" onClick={() => handleApprove(ts.id)}>
+                        Approve
+                      </button>
+                      {rejectingId === ts.id ? (
+                        <div className="reject-form">
+                          <input
+                            type="text"
+                            placeholder="Rejection reason (optional)"
+                            value={rejectNote}
+                            onChange={e => setRejectNote(e.target.value)}
+                          />
+                          <button className="reject-btn" onClick={() => handleReject(ts.id)}>Confirm Reject</button>
+                          <button className="cancel-btn" onClick={() => { setRejectingId(null); setRejectNote(''); }}>Cancel</button>
+                        </div>
+                      ) : (
+                        <button className="reject-btn" onClick={() => setRejectingId(ts.id)}>Reject</button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
         </div>
       </main>

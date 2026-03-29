@@ -122,6 +122,139 @@
   border-bottom: none;
 }
 
+/* Approval workflow */
+.submission-status-badge {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.submit-timesheet-btn {
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.submit-timesheet-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.submit-timesheet-btn:not(:disabled):hover {
+  opacity: 0.85;
+}
+
+.approval-queue {
+  margin-top: 32px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.approval-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.approval-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.approval-user {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.approval-week {
+  font-size: 0.9rem;
+  color: var(--accent);
+  margin-top: 4px;
+}
+
+.approval-submitted {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.approval-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.approve-btn {
+  padding: 7px 16px;
+  border-radius: 6px;
+  border: none;
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.approve-btn:hover { background: rgba(16, 185, 129, 0.3); }
+
+.reject-btn {
+  padding: 7px 16px;
+  border-radius: 6px;
+  border: none;
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.reject-btn:hover { background: rgba(239, 68, 68, 0.3); }
+
+.cancel-btn {
+  padding: 7px 16px;
+  border-radius: 6px;
+  border: none;
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.reject-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.reject-form input {
+  padding: 7px 12px;
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  min-width: 200px;
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
