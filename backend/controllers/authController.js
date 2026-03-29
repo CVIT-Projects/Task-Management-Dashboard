@@ -80,7 +80,7 @@ export const login = async (req, res, next) => {
 export const getMe = async (req, res, next) => {
   try {
     // req.user logic is handled securely by the verifyToken middleware before this runs
-    res.json({ user: req.user.toJSON() });
+    res.json({ user: req.user });
   } catch (error) {
     next(error);
   }

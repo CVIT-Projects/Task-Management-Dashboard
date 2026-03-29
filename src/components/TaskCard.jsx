@@ -40,7 +40,7 @@ function TaskCard({ task }) {
   const overdue = isOverdue(task.deadline);
   
   const { activeEntry, elapsed, startTimer, stopTimer } = useTimer();
-  const isRunning = String(activeEntry?.task) === String(task.id);
+  const isRunning = activeEntry?.task?.id === task.id;
 
   return (
     <div className={`task-row ${priority.className} ${overdue ? 'overdue' : ''}`}>

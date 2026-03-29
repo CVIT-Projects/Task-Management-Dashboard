@@ -92,7 +92,7 @@ export const updateTask = async (req, res, next) => {
     const task = await Task.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true } // Returns the updated document
+      { new: true, runValidators: true } // Returns the updated document
     );
 
     if (!task) {

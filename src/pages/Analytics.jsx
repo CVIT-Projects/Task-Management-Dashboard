@@ -89,7 +89,7 @@ export default function Analytics() {
     const headers = ['Task', 'User', 'Project', 'Start Time', 'Duration (Seconds)'];
     const rows = detailed.map(e => [
       e.task?.taskName || 'N/A',
-      e.user?.username || 'N/A',
+      e.user?.name || 'N/A',
       e.task?.project?.name || 'N/A',
       new Date(e.startTime).toLocaleString(),
       e.duration
@@ -267,7 +267,7 @@ export default function Analytics() {
                   ) : detailed.map((entry, idx) => (
                     <tr key={idx}>
                       <td>{entry.task?.taskName}</td>
-                      <td>{entry.user?.username || entry.user?.name}</td>
+                      <td>{entry.user?.name}</td>
                       <td>{entry.task?.project?.name || 'None'}</td>
                       <td>{new Date(entry.startTime).toLocaleString()}</td>
                       <td>{formatDuration(entry.duration)}</td>

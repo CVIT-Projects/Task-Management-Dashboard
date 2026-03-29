@@ -1,5 +1,5 @@
 const token = localStorage.getItem('authToken');
-if (!token) window.location.href = '/';
+if (!token) window.location.href = '/login';
 
 function getAuthHeaders() {
   return {

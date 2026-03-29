@@ -1,5 +1,5 @@
 const token = localStorage.getItem('authToken');
-if (!token) window.location.href = '/';
+if (!token) window.location.href = '/login';
 
 let allUsers = [];
 
@@ -14,7 +14,7 @@ function handleUnauthorized(status) {
   if (status === 401 || status === 403) {
     localStorage.removeItem('authToken');
     localStorage.removeItem('authUser');
-    window.location.href = '/';
+    window.location.href = '/login';
     return true;
   }
   return false;

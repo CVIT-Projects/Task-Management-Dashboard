@@ -71,7 +71,7 @@ export const getSummaryReport = async (req, res, next) => {
             { $group: {
                 _id: '$taskInfo.project',
                 totalSeconds: { $sum: '$duration' },
-                billableSeconds: { $sum: { $cond: [{ $eq: ['$taskInfo.priority', 'High'] }, '$duration', 0] } }, // Simulated billable logic based on priority for now
+                billableSeconds: { $sum: { $cond: ['$billable', '$duration', 0] } },
                 count: { $sum: 1 }
             }},
             { $lookup: { from: 'projects', localField: '_id', foreignField: '_id', as: 'groupInfo' } }
@@ -81,7 +81,7 @@ export const getSummaryReport = async (req, res, next) => {
             { $group: {
                 _id: '$user',
                 totalSeconds: { $sum: '$duration' },
-                billableSeconds: { $sum: { $cond: [{ $eq: ['$taskInfo.priority', 'High'] }, '$duration', 0] } },
+                billableSeconds: { $sum: { $cond: ['$billable', '$duration', 0] } },
                 count: { $sum: 1 }
             }},
             { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'groupInfo' } }
@@ -91,7 +91,7 @@ export const getSummaryReport = async (req, res, next) => {
             { $group: {
                 _id: '$task',
                 totalSeconds: { $sum: '$duration' },
-                billableSeconds: { $sum: { $cond: [{ $eq: ['$taskInfo.priority', 'High'] }, '$duration', 0] } },
+                billableSeconds: { $sum: { $cond: ['$billable', '$duration', 0] } },
                 count: { $sum: 1 }
             }},
             { $lookup: { from: 'tasks', localField: '_id', foreignField: '_id', as: 'groupInfo' } }
