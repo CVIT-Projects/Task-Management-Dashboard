@@ -6,11 +6,114 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { useAuth } from '../contexts/AuthContext';
 import '../App.css';
 
+const ONBOARDING_KEY = 'onboarding_dismissed';
+
+function AdminOnboarding({ projects, tasks }) {
+  const [dismissed, setDismissed] = useState(
+    () => localStorage.getItem(ONBOARDING_KEY) === 'true'
+  );
+
+  if (dismissed || (projects.length > 0 && tasks.length > 0)) return null;
+
+  const steps = [
+    {
+      done: projects.length > 0,
+      icon: '📁',
+      label: 'Create a Project',
+      desc: 'Group tasks under a project with a colour.',
+      link: '/admin/projects.html',
+      cta: 'Create Project',
+    },
+    {
+      done: false,
+      icon: '👥',
+      label: 'Register Team Members',
+      desc: 'Ask teammates to sign up at /register.',
+      link: '/register',
+      cta: 'Register Page',
+    },
+    {
+      done: tasks.length > 0,
+      icon: '✅',
+      label: 'Create Your First Task',
+      desc: 'Assign a task to a team member with a deadline.',
+      link: '/admin/',
+      cta: 'Create Task',
+    },
+  ];
+
+  return (
+    <div className="onboarding-banner">
+      <div className="onboarding-header">
+        <div>
+          <h3>👋 Welcome! Let's get set up.</h3>
+          <p>Follow these steps to start managing your team's tasks.</p>
+        </div>
+        <button className="onboarding-dismiss" onClick={() => {
+          localStorage.setItem(ONBOARDING_KEY, 'true');
+          setDismissed(true);
+        }}>✕ Dismiss</button>
+      </div>
+      <div className="onboarding-steps">
+        {steps.map((step, i) => (
+          <div key={i} className={`onboarding-step ${step.done ? 'done' : ''}`}>
+            <div className="onboarding-step-icon">{step.done ? '✅' : step.icon}</div>
+            <div className="onboarding-step-body">
+              <div className="onboarding-step-label">{step.label}</div>
+              <div className="onboarding-step-desc">{step.desc}</div>
+            </div>
+            {!step.done && (
+              <a href={step.link} className="onboarding-step-btn">{step.cta} →</a>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const API_BASE = import.meta.env.VITE_API_URL || '';
 const TASKS_API = `${API_BASE}/api/tasks`;
 const POLL_INTERVAL = 10000; // 10 seconds
 
 const PRIORITY_ORDER = { High: 1, Medium: 2, Low: 3 };
+
+function UserWelcomeTip() {
+  const [dismissed, setDismissed] = useState(
+    () => localStorage.getItem('user_welcome_dismissed') === 'true'
+  );
+  if (dismissed) return null;
+  return (
+    <div className="onboarding-banner">
+      <div className="onboarding-header">
+        <div>
+          <h3>👋 Welcome to Task Dashboard!</h3>
+          <p>Here's how to get started with your tasks.</p>
+        </div>
+        <button className="onboarding-dismiss" onClick={() => {
+          localStorage.setItem('user_welcome_dismissed', 'true');
+          setDismissed(true);
+        }}>✕ Dismiss</button>
+      </div>
+      <div className="onboarding-steps">
+        {[
+          { icon: '📋', label: 'Your Tasks', desc: 'Tasks assigned to you appear here. Use Priority and Tag filters to find what you need.' },
+          { icon: '▶️', label: 'Track Time', desc: 'Click "Start Timer" on any task to log time. Only one timer runs at a time.' },
+          { icon: '🔄', label: 'Update Status', desc: 'Click the status chip on a task to change it from Not Started → In Progress → Completed.' },
+          { icon: '📤', label: 'Submit Timesheet', desc: 'At the end of each week, go to Timesheet and click "Submit for Approval" for your manager to review.' },
+        ].map((tip, i) => (
+          <div key={i} className="onboarding-step">
+            <div className="onboarding-step-icon">{tip.icon}</div>
+            <div className="onboarding-step-body">
+              <div className="onboarding-step-label">{tip.label}</div>
+              <div className="onboarding-step-desc">{tip.desc}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function Dashboard() {
   const [tasks, setTasks] = useState([]);
@@ -101,6 +204,12 @@ function Dashboard() {
         taskCount={processedTasks.length}
       />
       <main className="main-content">
+        {!loading && !error && user?.role === 'admin' && (
+          <AdminOnboarding projects={projects} tasks={tasks} />
+        )}
+        {!loading && !error && user?.role !== 'admin' && tasks.length === 0 && (
+          <UserWelcomeTip />
+        )}
         {loading ? (
           <LoadingSpinner />
         ) : error ? (

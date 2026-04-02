@@ -3,15 +3,21 @@ import './TaskTable.css';
 
 function TaskTable({ tasks, user }) {
   if (tasks.length === 0) {
-    const emptyMessage = user?.role === 'admin' 
-      ? 'No tasks match your filter criteria.' 
-      : 'You have no tasks assigned to you yet.';
-
+    if (user?.role === 'admin') {
+      return (
+        <div className="empty-state">
+          <div className="empty-icon">🗂️</div>
+          <h2>No Tasks Found</h2>
+          <p>No tasks match your filter criteria, or none have been created yet.</p>
+          <a href="/admin/" className="empty-cta-btn">⚙️ Go to Admin Panel to create tasks</a>
+        </div>
+      );
+    }
     return (
       <div className="empty-state">
-        <div className="empty-icon">🗂️</div>
-        <h2>No Tasks Found</h2>
-        <p>{emptyMessage}</p>
+        <div className="empty-icon">📭</div>
+        <h2>No Tasks Assigned</h2>
+        <p>You have no tasks assigned to you yet. Contact your admin to get started.</p>
       </div>
     );
   }

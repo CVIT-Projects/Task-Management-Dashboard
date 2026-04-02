@@ -72,6 +72,7 @@ function Navbar({ searchTerm, onSearchChange, priorityFilter, onPriorityChange, 
         <button className="admin-link-btn" onClick={() => navigate('/')}>📊 Dashboard</button>
         <button className="admin-link-btn" onClick={() => navigate('/timesheet')}>🕒 Timesheet</button>
         <button className="admin-link-btn" onClick={() => navigate('/analytics')}>📈 Reports</button>
+        <button className="admin-link-btn" onClick={() => navigate('/help')}>❓ Help</button>
 
         {user?.role === 'admin' && (
           <a href="/admin/" className="admin-link-btn">⚙️ Admin Panel</a>
