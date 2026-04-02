@@ -55,33 +55,56 @@ export const TimerProvider = ({ children }) => {
   }, [activeEntry]);
 
   const startTimer = async (taskId) => {
+    // 1. Optimistic UI update: instantly show timer as running
+    const tempEntry = { 
+      id: 'temp-loading', 
+      task: taskId, 
+      startTime: new Date().toISOString(), 
+      endTime: null 
+    };
+    setActiveEntry(tempEntry);
+    setElapsed(0);
+
     try {
       const res = await axios.post(
         `${TIME_ENTRIES_API}/start`, 
         { taskId }, 
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      // The backend creates the entry and also auto-closes any previous one.
+      // 2. Replace temporary entry with real database entry
       setActiveEntry(res.data.entry);
     } catch (error) {
       console.error('Failed to start timer', error);
+      setActiveEntry(null); // Revert optimistic UI on fail
       alert('Could not start timer. ' + (error.response?.data?.message || ''));
     }
   };
 
   const stopTimer = async () => {
     if (!activeEntry) return;
+
+    // 1. Save previous state for rollback
+    const previousEntry = activeEntry;
+    const previousElapsed = elapsed;
+
+    // 2. Optimistic UI update: instantly stop the clock
+    setActiveEntry(null);
+    setElapsed(0);
+
     try {
-      await axios.patch(
-        `${TIME_ENTRIES_API}/${activeEntry.id}/stop`, 
-        {}, 
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      // Nullify the active state, killing the ticking clock
-      setActiveEntry(null);
-      setElapsed(0);
+      // Don't send request if it's still a temporary optimistic entry
+      if (previousEntry.id !== 'temp-loading') {
+        await axios.patch(
+          `${TIME_ENTRIES_API}/${previousEntry.id}/stop`, 
+          {}, 
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
     } catch (error) {
       console.error('Failed to stop timer', error);
+      // Revert optimistic UI on fail
+      setActiveEntry(previousEntry);
+      setElapsed(previousElapsed);
       alert('Could not stop timer.');
     }
   };

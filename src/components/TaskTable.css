@@ -34,8 +34,8 @@
 
 /* Body */
 .table-body {
-  overflow-y: auto;
-  max-height: calc(100vh - 175px);
+  /* Let table expand naturally to avoid double scrollbars */
+  width: 100%;
 }
 
 /* Empty State */
