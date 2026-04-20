@@ -1,5 +1,6 @@
 import Task from '../models/Task.js';
 import TimeEntry from '../models/TimeEntry.js';
+import { logActivity } from './commentController.js';
 
 // @desc    Get all tasks
 // @route   GET /api/tasks
@@ -151,6 +152,7 @@ export const updateTaskStatus = async (req, res, next) => {
       return res.status(403).json({ message: 'Not authorized to change this task status' });
     }
 
+    const oldStatus = task.status;
     task.status = status;
     
     // Auto-record the exact completion date/time
@@ -161,6 +163,16 @@ export const updateTaskStatus = async (req, res, next) => {
     }
 
     await task.save();
+
+    // Log the activity
+    await logActivity(
+      task._id, 
+      req.user.id, 
+      `Changed status from ${oldStatus} to ${status}`, 
+      'status_change', 
+      oldStatus, 
+      status
+    );
 
     res.json(task);
   } catch (error) {

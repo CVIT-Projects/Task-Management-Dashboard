@@ -11,6 +11,7 @@ import timeEntryRoutes from './routes/timeEntries.js';
 import projectRoutes from './routes/projects.js';
 import reportRoutes from './routes/reports.js';
 import timesheetRoutes from './routes/timesheets.js';
+import commentRoutes from './routes/comments.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,14 +29,33 @@ for (const key of REQUIRED_ENV) {
 }
 
 // Connect to MongoDB
-connectDB();
+await connectDB();
 
 const app = express();
 
 // Middleware
 app.use(express.json({ limit: '10mb' })); // Parses incoming JSON requests; limit prevents oversized payload attacks
-const allowedOrigin = process.env.CLIENT_URL || (process.env.NODE_ENV === 'production' ? false : 'http://localhost:5173');
-app.use(cors({ origin: allowedOrigin })); // In production CLIENT_URL must be set explicitly
+
+// Relaxed CORS for local development to handle shifting Vite ports (5173, 5174, 5175, 5176)
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:5175',
+  'http://localhost:5176',
+  'http://localhost:5177'
+].filter(Boolean);
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -50,6 +70,7 @@ app.use('/api/time-entries', timeEntryRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/timesheets', timesheetRoutes);
+app.use('/api/comments', commentRoutes);
 
 // Serve React production build handled by app.yaml handlers
 // No additional static serving code needed here.
