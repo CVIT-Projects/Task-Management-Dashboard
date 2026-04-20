@@ -99,6 +99,11 @@ function TaskCard({ task }) {
       if (newStatus === 'Completed' && isRunning) {
          stopTimer();
       }
+
+      // Refresh activities if panel is open
+      if (showActivities) {
+        loadActivities();
+      }
     } catch (err) {
       console.error(err);
       setLocalStatus(oldStatus); // Revert
@@ -106,13 +111,16 @@ function TaskCard({ task }) {
     }
   };
 
-  const fetchActivities = async () => {
+  const toggleActivities = () => {
     if (showActivities) {
       setShowActivities(false);
-      return;
+    } else {
+      loadActivities();
+      setShowActivities(true);
     }
-    
-    setShowActivities(true);
+  };
+
+  const loadActivities = async () => {
     setLoadingActivities(true);
     try {
       const API_BASE = import.meta.env.VITE_API_URL || '';
@@ -231,7 +239,12 @@ function TaskCard({ task }) {
           ) : (
             <button 
               className={`timer-btn ${isRunning ? 'running' : 'stopped'}`}
-              onClick={() => isRunning ? stopTimer() : startTimer(task.id)}
+              onClick={() => {
+                const actionPromise = isRunning ? stopTimer() : startTimer(task.id);
+                actionPromise.then(() => {
+                  if (showActivities) setTimeout(loadActivities, 500); // Small delay to allow DB consistency
+                });
+              }}
             >
               {isRunning ? `⏹ Stop ${formatDuration(elapsed)}` : '▶ Start Timer'}
             </button>
@@ -241,10 +254,10 @@ function TaskCard({ task }) {
         {(isOwner || user?.role === 'admin') && (
           <button 
             className="activity-toggle-btn"
-            onClick={fetchActivities}
+            onClick={toggleActivities}
             title="View comments and activity log"
           >
-            💬 {activities.length || 'Activity'}
+            💬 Activity
           </button>
         )}
       </div>

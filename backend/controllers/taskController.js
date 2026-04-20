@@ -1,5 +1,6 @@
 import Task from '../models/Task.js';
 import TimeEntry from '../models/TimeEntry.js';
+import Comment from '../models/Comment.js';
 import { logActivity } from './commentController.js';
 
 // @desc    Get all tasks
@@ -126,6 +127,9 @@ export const deleteTask = async (req, res, next) => {
       return res.status(404).json({ message: 'Task not found' });
     }
 
+    // Cleanup: Delete orphaned comments associated with this task
+    await Comment.deleteMany({ task: req.params.id });
+
     res.json({ message: 'Task deleted successfully' });
   } catch (error) {
     next(error);
@@ -164,8 +168,8 @@ export const updateTaskStatus = async (req, res, next) => {
 
     await task.save();
 
-    // Log the activity
-    await logActivity(
+    // Log the activity (fire-and-forget)
+    logActivity(
       task._id, 
       req.user.id, 
       `Changed status from ${oldStatus} to ${status}`, 

@@ -38,8 +38,8 @@ export const startTimer = async (req, res, next) => {
       await taskObj.save();
     }
 
-    // Log activity: Started timer
-    await logActivity(
+    // Log activity: Started timer (fire-and-forget)
+    logActivity(
       taskId, 
       req.user.id, 
       'Started timer', 
@@ -73,8 +73,8 @@ export const stopTimer = async (req, res, next) => {
 
     await entry.save();
 
-    // Log activity: Stopped timer
-    await logActivity(
+    // Log activity: Stopped timer (fire-and-forget)
+    logActivity(
       entry.task, 
       req.user.id, 
       `Stopped timer (${Math.floor(entry.duration / 60)}m ${entry.duration % 60}s tracked)`, 
