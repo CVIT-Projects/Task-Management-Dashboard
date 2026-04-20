@@ -1,6 +1,7 @@
 import TimeEntry from '../models/TimeEntry.js';
 import Task from '../models/Task.js';
 import User from '../models/User.js';
+import { logActivity } from './commentController.js';
 
 // @desc    Start a new timer for a task
 // @route   POST /api/time-entries/start
@@ -37,6 +38,14 @@ export const startTimer = async (req, res, next) => {
       await taskObj.save();
     }
 
+    // Log activity: Started timer (fire-and-forget)
+    logActivity(
+      taskId, 
+      req.user.id, 
+      'Started timer', 
+      'timer_start'
+    );
+
     res.status(201).json({ message: 'Timer started', entry: newEntry, previousStopped: !!activeTimer });
   } catch (error) {
     next(error);
@@ -63,6 +72,14 @@ export const stopTimer = async (req, res, next) => {
     }
 
     await entry.save();
+
+    // Log activity: Stopped timer (fire-and-forget)
+    logActivity(
+      entry.task, 
+      req.user.id, 
+      `Stopped timer (${Math.floor(entry.duration / 60)}m ${entry.duration % 60}s tracked)`, 
+      'timer_stop'
+    );
 
     res.json(entry);
   } catch (error) {

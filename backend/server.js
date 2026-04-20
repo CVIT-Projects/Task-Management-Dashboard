@@ -11,6 +11,7 @@ import timeEntryRoutes from './routes/timeEntries.js';
 import projectRoutes from './routes/projects.js';
 import reportRoutes from './routes/reports.js';
 import timesheetRoutes from './routes/timesheets.js';
+import commentRoutes from './routes/comments.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -34,8 +35,20 @@ const app = express();
 
 // Middleware
 app.use(express.json({ limit: '10mb' })); // Parses incoming JSON requests; limit prevents oversized payload attacks
-const allowedOrigin = process.env.CLIENT_URL || (process.env.NODE_ENV === 'production' ? false : 'http://localhost:5173');
-app.use(cors({ origin: allowedOrigin })); // In production CLIENT_URL must be set explicitly
+
+// Hardened CORS for production and specific local dev ports
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:5175',
+  'http://localhost:5176',
+  'http://localhost:5177'
+].filter(Boolean);
+
+app.use(cors({
+  origin: allowedOrigins
+}));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -50,6 +63,7 @@ app.use('/api/time-entries', timeEntryRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/timesheets', timesheetRoutes);
+app.use('/api/comments', commentRoutes);
 
 // Serve React production build handled by app.yaml handlers
 // No additional static serving code needed here.

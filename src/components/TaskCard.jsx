@@ -46,6 +46,10 @@ function TaskCard({ task }) {
   const { token, user } = useAuth();
   
   const [localStatus, setLocalStatus] = useState(task.status);
+  const [showActivities, setShowActivities] = useState(false);
+  const [activities, setActivities] = useState([]);
+  const [newComment, setNewComment] = useState('');
+  const [loadingActivities, setLoadingActivities] = useState(false);
   
   // Sync status if parent prop updates
   useEffect(() => {
@@ -95,10 +99,58 @@ function TaskCard({ task }) {
       if (newStatus === 'Completed' && isRunning) {
          stopTimer();
       }
+
+      // Refresh activities if panel is open
+      if (showActivities) {
+        loadActivities();
+      }
     } catch (err) {
       console.error(err);
       setLocalStatus(oldStatus); // Revert
       alert('Failed to update status');
+    }
+  };
+
+  const toggleActivities = () => {
+    if (showActivities) {
+      setShowActivities(false);
+    } else {
+      loadActivities();
+      setShowActivities(true);
+    }
+  };
+
+  const loadActivities = async () => {
+    setLoadingActivities(true);
+    try {
+      const API_BASE = import.meta.env.VITE_API_URL || '';
+      const res = await axios.get(`${API_BASE}/api/comments/${task.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setActivities(res.data);
+    } catch (err) {
+      console.error('Failed to fetch activities', err);
+    } finally {
+      setLoadingActivities(false);
+    }
+  };
+
+  const handleAddComment = async (e) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
+
+    try {
+      const API_BASE = import.meta.env.VITE_API_URL || '';
+      const res = await axios.post(
+        `${API_BASE}/api/comments/${task.id}`,
+        { text: newComment },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setActivities([res.data, ...activities]);
+      setNewComment('');
+    } catch (err) {
+      console.error('Failed to post comment', err);
+      alert('Could not post comment');
     }
   };
 
@@ -187,11 +239,26 @@ function TaskCard({ task }) {
           ) : (
             <button 
               className={`timer-btn ${isRunning ? 'running' : 'stopped'}`}
-              onClick={() => isRunning ? stopTimer() : startTimer(task.id)}
+              onClick={() => {
+                const actionPromise = isRunning ? stopTimer() : startTimer(task.id);
+                actionPromise.then(() => {
+                  if (showActivities) setTimeout(loadActivities, 500); // Small delay to allow DB consistency
+                });
+              }}
             >
               {isRunning ? `⏹ Stop ${formatDuration(elapsed)}` : '▶ Start Timer'}
             </button>
           )
+        )}
+        
+        {(isOwner || user?.role === 'admin') && (
+          <button 
+            className="activity-toggle-btn"
+            onClick={toggleActivities}
+            title="View comments and activity log"
+          >
+            💬 Activity
+          </button>
         )}
       </div>
 
@@ -248,6 +315,45 @@ function TaskCard({ task }) {
           <span className="no-attachment">No file</span>
         )}
       </div>
+
+      {showActivities && (
+        <div className="activity-panel">
+          <div className="activity-feed">
+            {loadingActivities ? (
+              <div className="activity-loading">Loading activity...</div>
+            ) : activities.length === 0 ? (
+              <div className="activity-empty">No activity yet.</div>
+            ) : (
+              activities.map((act) => (
+                <div key={act.id} className={`activity-item ${act.type}`}>
+                  <div className="activity-user-avatar">
+                    {act.user?.name?.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="activity-content">
+                    <div className="activity-meta">
+                      <span className="activity-user-name">{act.user?.name}</span>
+                      <span className="activity-time">{new Date(act.createdAt).toLocaleString()}</span>
+                    </div>
+                    <div className="activity-text">{act.text}</div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          <form className="comment-form" onSubmit={handleAddComment}>
+            <input 
+              type="text" 
+              placeholder="Add a comment..." 
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              className="comment-input"
+            />
+            <button type="submit" className="comment-submit-btn" disabled={!newComment.trim()}>
+              Post
+            </button>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

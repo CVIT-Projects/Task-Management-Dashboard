@@ -168,19 +168,33 @@ async function handleSubmit(e) {
       .filter(Boolean),
   };
 
+  const initialActivityComment = document.getElementById('adminActivityComment').value.trim();
+
   // Only include notes if both fields are filled — never send null
   if (fileName && downloadUrl) {
     data.notes = { fileName, downloadUrl };
   }
 
   try {
+    let result;
     if (id) {
-      await updateTask(id, data);
+      result = await updateTask(id, data);
       showToast('✅ Task updated successfully!', 'success');
     } else {
-      await createTask(data);
+      result = await createTask(data);
       showToast('✅ Task added successfully!', 'success');
     }
+
+    // If there's an initial activity comment, post it
+    if (initialActivityComment) {
+      const taskId = id || result.id || result._id;
+      await fetch(`${API_BASE}/api/comments/${taskId}`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ text: initialActivityComment })
+      });
+    }
+
     resetForm();
     await fetchTasks();
   } catch (err) {
@@ -228,6 +242,9 @@ function resetForm() {
   document.getElementById('formTitle').textContent = '➕ Add New Task';
   document.getElementById('submitBtn').innerHTML = '<span>➕ Add Task</span>';
   document.getElementById('cancelEditBtn').classList.add('hidden');
+  // Clear the activity comment as well
+  const commentField = document.getElementById('adminActivityComment');
+  if (commentField) commentField.value = '';
 }
 
 function toDatetimeLocal(str) {
@@ -298,8 +315,8 @@ function buildTaskCard(task) {
           ${overdue ? '<span class="overdue-tag">OVERDUE</span>' : ''}
         </div>
         <div class="task-card-actions">
-          <button class="edit-btn" onclick="startEdit('${task.id}')" title="Edit task">✏️ Edit</button>
-          <button class="delete-btn" onclick="openDeleteModal('${task.id}', '${escapeHtml(task.taskName)}')" title="Delete task">🗑️ Delete</button>
+          <button class="edit-btn" data-task-id="${task.id}" title="Edit task">✏️ Edit</button>
+          <button class="delete-btn" data-task-id="${task.id}" data-task-name="${escapeHtml(task.taskName)}" title="Delete task">🗑️ Delete</button>
         </div>
       </div>
       <div class="task-card-meta">
@@ -311,6 +328,7 @@ function buildTaskCard(task) {
           <span class="meta-label">Priority</span>
           <span class="priority-badge ${priorityClass}">${priorityIcon} ${task.priority}</span>
           ${task.isBillable ? '<span class="priority-badge" style="background:#10b981; color:#fff">💰 Billable</span>' : ''}
+          <button class="admin-activity-btn" data-task-id="${task.id}">💬 Activity</button>
         </div>
         <div class="meta-item">
           <span class="meta-label">Start</span>
@@ -334,16 +352,92 @@ function buildTaskCard(task) {
           <span class="tags-row">${task.tags.map(t => `<span class="tag-chip">${escapeHtml(t)}</span>`).join('')}</span>
         </div>` : ''}
       </div>
+      <div id="activity-panel-${task.id}" class="admin-activity-panel hidden">
+        <div class="activity-loading">Loading activity...</div>
+      </div>
     </div>`;
 }
 
 // Look up task by ID from allTasks and open edit form
+// ─── Activity Feed Logic (Admin) ───────────────────────────────────────────
+
+async function toggleAdminActivity(taskId) {
+  const panel = document.getElementById(`activity-panel-${taskId}`);
+  if (!panel.classList.contains('hidden')) {
+    panel.classList.add('hidden');
+    return;
+  }
+
+  panel.classList.remove('hidden');
+  await refreshAdminActivity(taskId);
+}
+
+async function refreshAdminActivity(taskId) {
+  const panel = document.getElementById(`activity-panel-${taskId}`);
+  panel.innerHTML = '<div class="activity-loading">Loading activity...</div>';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/comments/${taskId}`, { headers: getAuthHeaders() });
+    if (!res.ok) throw new Error('Failed to fetch activity');
+    const activities = await res.json();
+    renderAdminActivity(taskId, activities);
+  } catch (err) {
+    panel.innerHTML = `<div class="activity-error">Error: ${err.message}</div>`;
+  }
+}
+
+function renderAdminActivity(taskId, activities) {
+  const panel = document.getElementById(`activity-panel-${taskId}`);
+  
+  let html = `
+    <div class="admin-activity-feed">
+      ${activities.length === 0 ? '<p class="empty-feed">No activity yet.</p>' : 
+        activities.map(act => `
+          <div class="admin-activity-item ${act.type}">
+            <div class="act-avatar">${act.user?.name?.charAt(0).toUpperCase() || '?'}</div>
+            <div class="act-content">
+              <div class="act-meta">
+                <strong>${escapeHtml(act.user?.name || 'User')}</strong>
+                <span>${new Date(act.createdAt).toLocaleString()}</span>
+              </div>
+              <p class="act-text">${escapeHtml(act.text)}</p>
+            </div>
+          </div>
+        `).join('')
+      }
+    </div>
+    <div class="admin-comment-form">
+      <input type="text" id="comment-input-${taskId}" placeholder="Add a comment..." class="admin-comment-input">
+      <button class="admin-post-comment-btn" data-task-id="${taskId}">Post</button>
+    </div>
+  `;
+  panel.innerHTML = html;
+}
+
+async function postAdminComment(taskId) {
+  const input = document.getElementById(`comment-input-${taskId}`);
+  const text = input.value.trim();
+  if (!text) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/comments/${taskId}`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ text })
+    });
+    if (!res.ok) throw new Error('Failed to post comment');
+    input.value = '';
+    await refreshAdminActivity(taskId);
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+}
+
+// ─── Utility & Modal Functions (Restored) ───────────────────────────────────
+
 function startEdit(id) {
-  console.log('startEdit called with id:', id);
   const task = allTasks.find(t => String(t.id) === String(id));
-  console.log('task found:', task);
   if (task) populateEditForm(task);
-  else console.warn('Task not found in allTasks for id:', id);
 }
 
 function escapeHtml(str) {
@@ -354,17 +448,18 @@ function isSafeUrl(url) {
   return typeof url === 'string' && /^https?:\/\//i.test(url);
 }
 
-// ─── Delete Modal ───────────────────────────────────────────────────────────
-
 function openDeleteModal(id, name) {
   deleteTargetId = id;
-  document.getElementById('modalMessage').textContent = `Delete "${name}"? This cannot be undone.`;
-  document.getElementById('modalOverlay').classList.remove('hidden');
+  const msg = document.getElementById('modalMessage');
+  if (msg) msg.textContent = `Delete "${name}"? This cannot be undone.`;
+  const overlay = document.getElementById('modalOverlay');
+  if (overlay) overlay.classList.remove('hidden');
 }
 
 function closeModal() {
   deleteTargetId = null;
-  document.getElementById('modalOverlay').classList.add('hidden');
+  const overlay = document.getElementById('modalOverlay');
+  if (overlay) overlay.classList.add('hidden');
 }
 
 async function confirmDelete() {
@@ -373,7 +468,6 @@ async function confirmDelete() {
     await deleteTask(deleteTargetId);
     showToast('🗑️ Task deleted.', 'success');
     await fetchTasks();
-    // if currently editing this task, reset
     if (document.getElementById('taskId').value == deleteTargetId) resetForm();
   } catch (e) {
     showToast('❌ Could not delete task.', 'error');
@@ -382,26 +476,48 @@ async function confirmDelete() {
   }
 }
 
-// ─── UI Helpers ──────────────────────────────────────────────────────────────
-
 function setStatus(online) {
   const dot = document.getElementById('statusDot');
   const txt = document.getElementById('statusText');
-  dot.className = 'status-dot ' + (online ? 'online' : 'offline');
-  txt.textContent = online ? 'API Connected' : 'API Unreachable';
+  if (dot) dot.className = 'status-dot ' + (online ? 'online' : 'offline');
+  if (txt) txt.textContent = online ? 'API Connected' : 'API Unreachable';
 }
 
 function showToast(msg, type = 'success') {
   const toast = document.getElementById('toast');
-  document.getElementById('toastMessage').textContent = msg;
-  toast.className = `toast ${type}`;
-  toast.classList.remove('hidden');
-  setTimeout(() => toast.classList.add('hidden'), 3500);
+  const toastMsg = document.getElementById('toastMessage');
+  if (toastMsg) toastMsg.textContent = msg;
+  if (toast) {
+    toast.className = `toast ${type}`;
+    toast.classList.remove('hidden');
+    setTimeout(() => toast.classList.add('hidden'), 3500);
+  }
 }
 
-// ─── Close modal on overlay click ───────────────────────────────────────────
-document.getElementById('modalOverlay').addEventListener('click', function(e) {
-  if (e.target === this) closeModal();
-});
+// Event Delegation for Task Actions
+const listEl = document.getElementById('taskList');
+if (listEl) {
+  listEl.addEventListener('click', function(e) {
+    const target = e.target;
+    const taskId = target.getAttribute('data-task-id');
+
+    if (target.classList.contains('edit-btn')) {
+      startEdit(taskId);
+    } else if (target.classList.contains('delete-btn')) {
+      const taskName = target.getAttribute('data-task-name');
+      openDeleteModal(taskId, taskName);
+    } else if (target.classList.contains('admin-activity-btn')) {
+      toggleAdminActivity(taskId);
+    } else if (target.classList.contains('admin-post-comment-btn')) {
+      postAdminComment(taskId);
+    }
+  });
+}
+
+// Expose functions to window for onclick handlers that are still in HTML (like modals/header)
+window.logout = logout;
+window.closeModal = closeModal;
+window.cancelEdit = cancelEdit;
+window.confirmDelete = confirmDelete;
 
 init();

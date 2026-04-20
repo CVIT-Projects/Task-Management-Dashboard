@@ -388,3 +388,160 @@
   border: 1px solid rgba(99, 102, 241, 0.25);
   text-transform: lowercase;
 }
+
+/* Activity Panel Styles */
+.activity-toggle-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 8px;
+}
+
+.activity-toggle-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--accent);
+}
+
+.activity-panel {
+  grid-column: 1 / -1;
+  background: rgba(13, 17, 23, 0.3);
+  border-top: 1px solid var(--border);
+  padding: 15px 20px;
+  animation: slideDown 0.25s ease-out;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.activity-feed {
+  max-height: 250px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-right: 10px;
+}
+
+.activity-feed::-webkit-scrollbar {
+  width: 4px;
+}
+
+.activity-feed::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 10px;
+}
+
+.activity-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.activity-user-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.activity-item.activity .activity-user-avatar {
+  background: #30363d;
+  color: var(--text-muted);
+}
+
+.activity-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.activity-user-name {
+  font-weight: 600;
+  font-size: 0.75rem;
+  color: var(--text-primary);
+}
+
+.activity-time {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+
+.activity-text {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.activity-item.activity .activity-text {
+  font-style: italic;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.activity-loading, .activity-empty {
+  text-align: center;
+  padding: 20px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.comment-form {
+  display: flex;
+  gap: 10px;
+}
+
+.comment-input {
+  flex: 1;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.comment-input:focus {
+  border-color: var(--accent);
+}
+
+.comment-submit-btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0 16px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.comment-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.comment-submit-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
