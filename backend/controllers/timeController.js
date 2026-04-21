@@ -1,7 +1,25 @@
 import TimeEntry from '../models/TimeEntry.js';
 import Task from '../models/Task.js';
 import User from '../models/User.js';
+import WeeklyTimesheet from '../models/WeeklyTimesheet.js';
 import { logActivity } from './commentController.js';
+
+// Helper to check if a specific date belongs to an approved timesheet week
+const isWeekLocked = async (userId, date) => {
+  if (!date) return false;
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  const monday = new Date(d.setDate(diff));
+  monday.setHours(0, 0, 0, 0);
+
+  const approvedTimesheet = await WeeklyTimesheet.findOne({
+    user: userId,
+    weekStart: monday,
+    status: 'approved'
+  });
+  return !!approvedTimesheet;
+};
 
 // @desc    Start a new timer for a task
 // @route   POST /api/time-entries/start
@@ -130,10 +148,16 @@ export const getMyTimeEntries = async (req, res, next) => {
 // @access  Private
 export const deleteTimeEntry = async (req, res, next) => {
   try {
-    // Users can only delete their own time entries
-    const entry = await TimeEntry.findOneAndDelete({ _id: req.params.id, user: req.user.id });
+    // 1. Fetch entry to check date
+    const entry = await TimeEntry.findOne({ _id: req.params.id, user: req.user.id });
     if (!entry) return res.status(404).json({ message: 'Time entry not found or unauthorized' });
-    
+
+    // 2. Check if week is approved
+    if (await isWeekLocked(req.user.id, entry.startTime)) {
+      return res.status(403).json({ message: 'Cannot delete entries from an approved timesheet week.' });
+    }
+
+    await entry.deleteOne();
     res.json({ message: 'Time entry deleted' });
   } catch (error) {
     next(error);
@@ -184,4 +208,79 @@ export const createManualEntry = async (req, res, next) => {
     } catch (error) {
         next(error);
     }
-}
+};
+
+// @desc    Update a time entry
+// @route   PUT /api/time-entries/:id
+// @access  Private
+export const updateTimeEntry = async (req, res, next) => {
+  try {
+    const { startTime, endTime, description, billable, taskId } = req.body;
+    
+    // 1. Ownership & Existence Check
+    const entry = await TimeEntry.findOne({ _id: req.params.id, user: req.user.id });
+    if (!entry) return res.status(404).json({ message: 'Time entry not found or unauthorized' });
+
+    // 2. Approved Timesheet Check (Original Week)
+    if (await isWeekLocked(req.user.id, entry.startTime)) {
+      return res.status(403).json({ message: 'Cannot edit entries for an approved timesheet week.' });
+    }
+
+    // 3. Update Fields & Approved Timesheet Check (Target Week)
+    if (taskId) entry.task = taskId;
+    if (description !== undefined) entry.description = description;
+    if (billable !== undefined) entry.billable = billable;
+    
+    if (startTime || endTime) {
+      const newStart = startTime ? new Date(startTime) : entry.startTime;
+      const newEnd = endTime ? new Date(endTime) : entry.endTime;
+
+      if (newEnd && newEnd < newStart) {
+        return res.status(400).json({ message: 'End time must be after start time' });
+      }
+
+      // If startTime is changing, check if the target week is locked
+      if (startTime && (new Date(startTime).getTime() !== new Date(entry.startTime).getTime())) {
+        if (await isWeekLocked(req.user.id, newStart)) {
+          return res.status(403).json({ message: 'Cannot move time entries into an approved timesheet week.' });
+        }
+      }
+
+      entry.startTime = newStart;
+      entry.endTime = newEnd;
+
+      if (entry.endTime) {
+        entry.duration = Math.floor((entry.endTime - entry.startTime) / 1000);
+      }
+    }
+
+    // 4. Recalculate earnedAmount
+    if (entry.billable && entry.duration > 0) {
+      // Re-fetch user to get current hourlyRate if needed, or keep snapshotted?
+      // Requirement says "Backend recalculates ... on update". 
+      // Usually, we use the original snapshotted hourlyRate unless requested otherwise.
+      // If none exists, we fetch from user.
+      if (!entry.hourlyRate) {
+        const fullUser = await User.findById(req.user.id);
+        entry.hourlyRate = fullUser ? (fullUser.hourlyRate || 0) : 0;
+      }
+      entry.earnedAmount = (entry.duration / 3600) * entry.hourlyRate;
+    } else {
+      entry.earnedAmount = 0;
+    }
+
+    await entry.save();
+    
+    // Log activity
+    logActivity(
+      entry.task, 
+      req.user.id, 
+      `Updated time entry (${Math.floor(entry.duration / 60)}m tracked)`, 
+      'timer_update'
+    );
+
+    res.json(entry);
+  } catch (error) {
+    next(error);
+  }
+};

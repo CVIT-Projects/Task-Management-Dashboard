@@ -60,6 +60,18 @@ export default function Timesheet() {
   const [rejectNote, setRejectNote] = useState('');
   const [rejectingId, setRejectingId] = useState(null);
 
+  // Edit Modal State
+  const [editingEntry, setEditingEntry] = useState(null);
+  const [editFormData, setEditFormData] = useState({
+    startTime: '',
+    endTime: '',
+    description: '',
+    billable: false
+  });
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  const [allTasks, setAllTasks] = useState([]); // For task selection in modal
+
   const monday = useMemo(() => getMonday(currentDate), [currentDate]);
   const sunday = useMemo(() => getSunday(monday), [monday]);
 
@@ -118,7 +130,25 @@ export default function Timesheet() {
       fetchSubmissionStatus();
       fetchPendingSubmissions();
     }
-  }, [fetchTimesheet, fetchSubmissionStatus, fetchPendingSubmissions]);
+  }, [user, token]);
+
+  const fetchAllTasks = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/api/tasks`, { headers: authHeader });
+      setAllTasks(res.data);
+    } catch (err) {
+      console.error('Failed to fetch tasks', err);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    if (token) {
+      fetchTimesheet();
+      fetchSubmissionStatus();
+      fetchPendingSubmissions();
+      fetchAllTasks();
+    }
+  }, [fetchTimesheet, fetchSubmissionStatus, fetchPendingSubmissions, fetchAllTasks]);
 
   const handleSubmit = async () => {
     setSubmitLoading(true);
@@ -165,6 +195,56 @@ export default function Timesheet() {
     const newDate = new Date(currentDate);
     newDate.setDate(newDate.getDate() + 7);
     setCurrentDate(newDate);
+  };
+
+  const handleEditClick = (entry) => {
+    // Helper to format ISO string to YYYY-MM-DDTHH:mm for datetime-local
+    const formatForInput = (isoStr) => {
+      if (!isoStr) return '';
+      const date = new Date(isoStr);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
+    };
+
+    setEditingEntry(entry);
+    setEditFormData({
+      taskId: entry.task?.id || entry.task?._id || entry.task || '',
+      startTime: formatForInput(entry.startTime),
+      endTime: formatForInput(entry.endTime),
+      description: entry.description || '',
+      billable: entry.billable || false
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    setEditLoading(true);
+    try {
+      await axios.put(`${API_BASE}/api/time-entries/${editingEntry.id}`, editFormData, { headers: authHeader });
+      setIsEditModalOpen(false);
+      fetchTimesheet(); // Refresh list
+    } catch (err) {
+      console.error('Edit failed', err);
+      alert(err.response?.data?.message || 'Failed to update time entry');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handleDeleteEntry = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this time entry?')) return;
+    try {
+      await axios.delete(`${API_BASE}/api/time-entries/${id}`, { headers: authHeader });
+      fetchTimesheet();
+    } catch (err) {
+      console.error('Delete failed', err);
+      alert('Failed to delete time entry');
+    }
   };
 
   const aggregatedData = useMemo(() => {
@@ -303,6 +383,141 @@ export default function Timesheet() {
               </tbody>
             </table>
           </div>
+
+          <div className="time-entries-details" style={{ marginTop: '40px' }}>
+            <h3 style={{ color: 'var(--text-primary)', marginBottom: '16px' }}>Time Entry Details</h3>
+            <div className="entries-list-wrapper">
+              <table className="entries-list-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Task</th>
+                    <th>Description</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Duration</th>
+                    <th style={{ textAlign: 'center' }}>Billable</th>
+                    <th style={{ textAlign: 'center' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {entries.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>
+                        No individual entries found for this week.
+                      </td>
+                    </tr>
+                  ) : (
+                    entries.map(entry => {
+                      const entryUserId = entry.user?.id || entry.user?._id || entry.user;
+                      const isOwner = user && String(entryUserId) === String(user.id);
+                      const isLocked = weekSubmission?.status === 'approved';
+                      const canModify = isOwner && !isLocked;
+
+                      return (
+                        <tr key={entry.id}>
+                          <td>{new Date(entry.startTime).toLocaleDateString()}</td>
+                          <td>{entry.task?.taskName || 'Unknown Task'}</td>
+                          <td className="desc-cell" title={entry.description}>{entry.description || '—'}</td>
+                          <td>{new Date(entry.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                          <td>{entry.endTime ? new Date(entry.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Running...'}</td>
+                          <td>{formatDuration(entry.duration)}</td>
+                          <td style={{ textAlign: 'center' }}>{entry.billable ? '✅' : '—'}</td>
+                          <td style={{ textAlign: 'center' }}>
+                            <div className="actions-cell">
+                              <button 
+                                className="edit-entry-btn" 
+                                onClick={() => handleEditClick(entry)}
+                                disabled={!canModify}
+                                title={isLocked ? "Locked (Week Approved)" : !isOwner ? "Only owners can edit" : "Edit entry"}
+                              >
+                                Edit
+                              </button>
+                              <button 
+                                className="delete-entry-btn" 
+                                onClick={() => handleDeleteEntry(entry.id)}
+                                disabled={!canModify}
+                                title={isLocked ? "Locked (Week Approved)" : !isOwner ? "Only owners can delete" : "Delete entry"}
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Edit Modal */}
+          {isEditModalOpen && (
+            <div className="modal-overlay">
+              <div className="edit-modal">
+                <h3>Edit Time Entry</h3>
+                <form onSubmit={handleEditSubmit}>
+                  <div className="form-group">
+                    <label>Task</label>
+                    <select 
+                      required
+                      value={editFormData.taskId}
+                      onChange={e => setEditFormData({...editFormData, taskId: e.target.value})}
+                      style={{ width: '100%', padding: '10px', borderRadius: '6px', background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                    >
+                      <option value="">Select a task</option>
+                      {allTasks.map(t => (
+                        <option key={t.id} value={t.id}>{t.taskName}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Start Date & Time</label>
+                    <input 
+                      type="datetime-local" 
+                      required 
+                      value={editFormData.startTime}
+                      onChange={e => setEditFormData({...editFormData, startTime: e.target.value})}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>End Date & Time</label>
+                    <input 
+                      type="datetime-local" 
+                      required
+                      value={editFormData.endTime}
+                      onChange={e => setEditFormData({...editFormData, endTime: e.target.value})}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Description</label>
+                    <textarea 
+                      placeholder="What did you work on?"
+                      value={editFormData.description}
+                      onChange={e => setEditFormData({...editFormData, description: e.target.value})}
+                    />
+                  </div>
+                  <div className="form-group billable-group">
+                    <label>
+                      <input 
+                        type="checkbox" 
+                        checked={editFormData.billable}
+                        onChange={e => setEditFormData({...editFormData, billable: e.target.checked})}
+                      />
+                      Billable Task
+                    </label>
+                  </div>
+                  <div className="modal-actions">
+                    <button type="button" className="cancel-btn" onClick={() => setIsEditModalOpen(false)}>Cancel</button>
+                    <button type="submit" className="save-btn" disabled={editLoading}>
+                      {editLoading ? 'Saving...' : 'Save Changes'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
 
           {/* Admin: Pending Approval Queue */}
           {user?.role === 'admin' && pendingSubmissions.length > 0 && (

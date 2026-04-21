@@ -5,7 +5,8 @@ import {
   stopTimer,
   getMyTimeEntries,
   deleteTimeEntry,
-  createManualEntry
+  createManualEntry,
+  updateTimeEntry
 } from '../controllers/timeController.js';
 
 const router = express.Router();
@@ -19,6 +20,7 @@ router.route('/')
 
 router.post('/start', startTimer);
 router.patch('/:id/stop', stopTimer);
+router.put('/:id', updateTimeEntry);
 router.delete('/:id', deleteTimeEntry);
 
 export default router;
