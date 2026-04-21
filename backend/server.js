@@ -14,6 +14,7 @@ import timesheetRoutes from './routes/timesheets.js';
 import commentRoutes from './routes/comments.js';
 import notificationRoutes from './routes/notifications.js';
 import Task from './models/Task.js';
+import Notification from './models/Notification.js';
 import { createInternalNotification } from './controllers/notificationController.js';
 
 const __filename = fileURLToPath(import.meta.url);
