@@ -43,12 +43,12 @@ function KanbanCard({ task, onStatusChange }) {
 
   // Update timer every 60s (Performance optimized for mentor)
   useEffect(() => {
-    if (isOverdue || task.status === 'Completed') return;
+    if (overdue || task.status === 'Completed') return;
     const interval = setInterval(() => {
       setTimeRemaining(getTimeRemaining(task.deadline));
     }, 60000);
     return () => clearInterval(interval);
-  }, [task.deadline, isOverdue, task.status]);
+  }, [task.deadline, overdue, task.status]);
 
   // Ownership check: does the logged-in user own this task?
   const assignedUserId = typeof task.assignedTo === 'object' && task.assignedTo !== null
