@@ -73,16 +73,18 @@ app.use('/api/notifications', notificationRoutes);
 // No additional static serving code needed here.
 
 
-// Background job to check for approaching deadlines (every hour)
-setInterval(async () => {
+// Helper to check for approaching deadlines
+const checkDeadlines = async () => {
   try {
     const twentyFourHoursFromNow = new Date(Date.now() + 24 * 60 * 60 * 1000);
     const now = new Date();
+    
     const tasks = await Task.find({
       status: { $ne: 'Completed' },
       assignedTo: { $ne: null },
       deadline: { $gte: now, $lte: twentyFourHoursFromNow }
     });
+
     for (const task of tasks) {
       await createInternalNotification(
         task.assignedTo,
@@ -93,7 +95,13 @@ setInterval(async () => {
   } catch (error) {
     console.error('Task deadline background check failed:', error);
   }
-}, 3600000); 
+};
+
+// Start background job (every hour)
+setInterval(checkDeadlines, 3600000);
+
+// Run once immediately on startup
+checkDeadlines();
 
 // Global Error Handler Middleware
 app.use((err, req, res, next) => {
