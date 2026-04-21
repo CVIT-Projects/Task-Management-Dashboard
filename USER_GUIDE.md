@@ -48,7 +48,8 @@ The dashboard eliminates the need for external time-tracking software by nativel
 ### Dashboard Overview After Login
 *   **Header Navigation:** Contains quick metrics (total tasks, polling status) and navigational links to your Timesheet or the Admin Panel (if authorized).
 *   **Global Filters:** Allows you to filter your view by Project Name or Tags.
-*   **Task Table:** The main workspace listing all tasks in a priority-sorted spreadsheet view. 
+*   **View Switcher (NEW):** Toggle between the classic **List View** and the new **Kanban Board View** using the buttons at the top right of the dashboard.
+*   **Task List / Board:** The main workspace listing all tasks. 
 
 ### Navigation Explanation
 *   **📊 Dashboard Button:** Returns you to the main active task list.
@@ -92,10 +93,16 @@ The dashboard eliminates the need for external time-tracking software by nativel
 *   **Where to find it:** By observing the Green Progress Bar (`Estimate Labels`) above task names.
 *   **Explanation:** When tracking time, the bar fills up. If actual logged hours outpace the original estimate assigned by the Admin, the bar turns Red.
 
-### Filtering and Searching Tasks
-*   **What it does:** Clears away noise to show only relevant tasks.
-*   **Where to find it:** The search/filtering panel along the top navigation bar.
-*   **Steps:** Click `Priority` to filter by high/med/low. For Normal Users, type a keyword in the `Search` bar to instantly search by task name. 
+### Switching to Kanban View
+*   **What it does:** Organizes your tasks into visual columns based on their status.
+*   **Where to find it:** Top right of the Dashboard, click the `Kanban Board` button.
+*   **Explanation:** This view is best for visualizing your progress. Each column (Not Started, In Progress, Blocked, Completed) shows cards for your assigned tasks. You can still update statuses and start timers directly from the cards.
+
+### Live Deadline Reminders
+*   **What it does:** Alerts you when a task is due within 24 hours.
+*   **Visual Indicator:** A pulsing amber badge appears on the task saying `Due in Xh Ym`.
+*   **Proactive Alerts:** You will also receive an in-app notification every hour for tasks approaching their deadline. Check the 🔔 bell icon in the navbar.
+*   **Real-time sync:** The "Time Left" indicator updates every minute automatically.
 
 ---
 
@@ -108,9 +115,9 @@ The dashboard eliminates the need for external time-tracking software by nativel
 *   **Delete:** Permanently destroys a record.
 *   **Status Dropdown:** (The colored pill badge). Click this to manually transition a task to Completed, Blocked, or In Progress.
 *   **🔒 Deadline Passed:** A visual lock indicating that a task has missed its due date and can no longer be tracked or edited.
+*   **⏳ Due in Xh Ym:** A pulsing amber badge indicating a deadline is approaching within 24 hours.
 *   **✔ Completed:** A greyed-out button indicating the task is done and no further time tracking is permitted.
-*   **⬇ [Filename]:** Downloads the specification document or notes attached to the task.
-*   **🔒 (Locked Download Icon):** Appears when a task passes its deadline, officially sealing off spec downloads.
+*   **🔔 Notification Bell:** Located in the navbar; shows a red dot when you have new deadline reminders. Click to see live countdowns for each task.
 
 ---
 

@@ -27,6 +27,7 @@ A full-stack task management application with time tracking, project grouping, b
 - View tasks assigned to you (regular users see only their own; admins see all)
 - Filter by project, tag, and priority
 - Search by task name or assigned person
+- Select between List View and Kanban Board View
 - Auto-sort by deadline then priority
 - Overdue task highlighting
 - Real-time polling every 10 seconds
@@ -40,6 +41,8 @@ A full-stack task management application with time tracking, project grouping, b
 - Tag chips
 - File attachment download link
 - Start / Stop timer button with live elapsed time display
+- **Live Deadline Countdown**: Pulsing badges on tasks due within 24 hours (List & Kanban)
+- **Optimized Performance**: Real-time timers synced to 1-minute updates
 
 ### Time Tracking
 - One-click timer start/stop per task
@@ -95,6 +98,17 @@ A full-stack task management application with time tracking, project grouping, b
 - Deadline lockout — timer and status are locked once a task's deadline passes
 - Timer auto-promotes task to "In Progress" when started
 - Timer auto-stops when task is marked Completed
+
+### Task Deadline Reminders
+- **Automatic Background Scanning**: Backend scans for deadlines every hour
+- **Hourly Proactive Notifications**: Users receive fresh in-app reminders for urgent tasks
+- **Dropdown Timers**: Live "Time Left" indicator directly inside the notification dropdown
+- **Populated Task Context**: Notifications link directly to task details
+
+### Kanban Board
+- **Status Columns**: Visual drag-agnostic columns (Not Started, In Progress, Blocked, Completed)
+- **Feature Parity**: Kanban cards include all List view features: timers, badges, and status updates
+- **Responsive Design**: Auto-adjusts layout for different screen sizes
 
 ### Onboarding & Help
 - **Admin onboarding checklist** — shown on first login when no projects/tasks exist; guides through: Create Project → Register Users → Create Task; auto-ticks steps as they are completed; dismissible
