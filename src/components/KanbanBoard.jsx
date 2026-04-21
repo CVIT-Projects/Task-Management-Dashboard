@@ -8,8 +8,8 @@ const STATUS_COLUMNS = ['Not Started', 'In Progress', 'Completed', 'Blocked'];
 const STATUS_CONFIG = {
   'Not Started': { icon: '⚪', className: 'not-started' },
   'In Progress': { icon: '🔵', className: 'in-progress' },
-  'Completed':   { icon: '🟢', className: 'completed' },
-  'Blocked':     { icon: '🔴', className: 'blocked' },
+  'Completed': { icon: '🟢', className: 'completed' },
+  'Blocked': { icon: '🔴', className: 'blocked' },
 };
 
 const PRIORITY_CONFIG = {
@@ -31,8 +31,8 @@ function KanbanCard({ task, onStatusChange }) {
   const isEffectivelyOverdue = overdue && task.status !== 'Completed';
 
   // Ownership check: does the logged-in user own this task?
-  const assignedUserId = typeof task.assignedTo === 'object' && task.assignedTo !== null 
-    ? (task.assignedTo.id || task.assignedTo._id) 
+  const assignedUserId = typeof task.assignedTo === 'object' && task.assignedTo !== null
+    ? (task.assignedTo.id || task.assignedTo._id)
     : task.assignedTo;
   const isOwner = assignedUserId && user && String(assignedUserId) === String(user.id);
   const canUpdateStatus = (isOwner || user?.role === 'admin') && !isEffectivelyOverdue;
@@ -42,11 +42,11 @@ function KanbanCard({ task, onStatusChange }) {
     const newStatus = e.target.value;
     const oldStatus = localStatus;
     setLocalStatus(newStatus);
-    
+
     try {
       const API_BASE = import.meta.env.VITE_API_URL || '';
       await axios.patch(
-        `${API_BASE}/api/tasks/${task.id}/status`, 
+        `${API_BASE}/api/tasks/${task.id}/status`,
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -75,7 +75,7 @@ function KanbanCard({ task, onStatusChange }) {
           {priority.icon} {task.priority}
         </span>
       </div>
-      
+
       <div className="kanban-task-body">
         <h4 className="kanban-task-name">{task.taskName}</h4>
         {task.isBillable && (
@@ -90,7 +90,7 @@ function KanbanCard({ task, onStatusChange }) {
           ))}
         </div>
       )}
-      
+
       <div className="kanban-card-footer">
         <div className="kanban-assignee">
           <div className="kanban-avatar" title={task.assignedTo?.name}>
@@ -104,7 +104,7 @@ function KanbanCard({ task, onStatusChange }) {
       </div>
 
       <div className="kanban-card-actions">
-        <select 
+        <select
           className={`kanban-status-select ${STATUS_CONFIG[localStatus]?.className}`}
           value={localStatus}
           onChange={handleStatusChange}
