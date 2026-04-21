@@ -1,8 +1,13 @@
 import Notification from '../models/Notification.js';
+import { checkDeadlinesForUser } from '../utils/deadlineChecker.js';
 
 export const getMyNotifications = async (req, res, next) => {
   try {
+    // Perform an on-demand check for this user's deadlines
+    await checkDeadlinesForUser(req.user.id);
+
     const notifications = await Notification.find({ userId: req.user.id })
+      .populate('taskId', 'taskName deadline')
       .sort({ createdAt: -1 })
       .limit(50);
     res.json(notifications);

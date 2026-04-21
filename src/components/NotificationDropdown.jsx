@@ -1,4 +1,33 @@
+import { useState, useEffect } from 'react';
 import './Navbar.css';
+
+function getTimeRemaining(deadline) {
+  const total = Date.parse(deadline) - Date.parse(new Date());
+  if (total <= 0) return null;
+  const minutes = Math.floor((total / 1000 / 60) % 60);
+  const hours = Math.floor((total / (1000 * 60 * 60)) % 24);
+  return { total, hours, minutes };
+}
+
+function LiveTimer({ deadline }) {
+  const [timeLeft, setTimeLeft] = useState(getTimeRemaining(deadline));
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const remaining = getTimeRemaining(deadline);
+      setTimeLeft(remaining);
+      if (!remaining) clearInterval(interval);
+    }, 60000); // Update every 1 minute
+    return () => clearInterval(interval);
+  }, [deadline]);
+
+  if (!timeLeft) return <span className="timer-expired">Expired</span>;
+  return (
+    <span className="live-timer">
+      ⏳ {timeLeft.hours}h {timeLeft.minutes}m left
+    </span>
+  );
+}
 
 function NotificationDropdown({ notifications, onMarkAsRead, onClose }) {
   const getIcon = (type) => {
@@ -11,6 +40,7 @@ function NotificationDropdown({ notifications, onMarkAsRead, onClose }) {
       default: return '📢';
     }
   };
+
   return (
     <div className="notification-dropdown">
       <div className="dropdown-header">
@@ -22,10 +52,19 @@ function NotificationDropdown({ notifications, onMarkAsRead, onClose }) {
           <div className="empty-notifications">No new notifications</div>
         ) : (
           notifications.map(notification => (
-            <div key={notification.id} className={`notification-item ${notification.read ? 'read' : 'unread'}`} onClick={() => !notification.read && onMarkAsRead(notification.id)}>
+            <div 
+              key={notification.id} 
+              className={`notification-item ${notification.read ? 'read' : 'unread'}`} 
+              onClick={() => !notification.read && onMarkAsRead(notification.id)}
+            >
               <div className="notification-icon">{getIcon(notification.type)}</div>
               <div className="notification-content">
                 <p className="notification-message">{notification.message}</p>
+                {notification.type === 'deadline_approaching' && notification.taskId?.deadline && (
+                  <div className="notification-timer">
+                    <LiveTimer deadline={notification.taskId.deadline} />
+                  </div>
+                )}
                 <span className="notification-time">{new Date(notification.createdAt).toLocaleString()}</span>
               </div>
               {!notification.read && <div className="unread-dot"></div>}

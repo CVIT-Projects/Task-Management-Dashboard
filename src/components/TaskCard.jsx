@@ -38,6 +38,15 @@ function formatDuration(seconds) {
   return `${h}:${m}:${s}`;
 }
 
+function getTimeRemaining(deadlineStr) {
+  const total = Date.parse(deadlineStr) - Date.parse(new Date());
+  if (total <= 0) return null;
+  const minutes = Math.floor((total / 1000 / 60) % 60);
+  const hours = Math.floor((total / (1000 * 60 * 60)) % 24);
+  const days = Math.floor(total / (1000 * 60 * 60 * 24));
+  return { total, days, hours, minutes };
+}
+
 function TaskCard({ task }) {
   const priority = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.Low;
   const overdue = isOverdue(task.deadline);
@@ -50,7 +59,26 @@ function TaskCard({ task }) {
   const [activities, setActivities] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [loadingActivities, setLoadingActivities] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState(getTimeRemaining(task.deadline));
   
+  // Update state immediately if deadline prop changes
+  useEffect(() => {
+    setTimeRemaining(getTimeRemaining(task.deadline));
+  }, [task.deadline]);
+
+  // Update countdown for tasks due within 24 hours
+  useEffect(() => {
+    if (overdue || localStatus === 'Completed') return;
+    
+    const interval = setInterval(() => {
+      const remaining = getTimeRemaining(task.deadline);
+      setTimeRemaining(remaining);
+      if (!remaining) clearInterval(interval);
+    }, 60000); // Update every minute
+    
+    return () => clearInterval(interval);
+  }, [task.deadline, overdue, localStatus]);
+
   // Sync status if parent prop updates
   useEffect(() => {
     setLocalStatus(task.status);
@@ -74,6 +102,7 @@ function TaskCard({ task }) {
   }, [isRunning, localStatus]);
 
   const isEffectivelyOverdue = overdue && localStatus !== 'Completed';
+  const isDueSoon = timeRemaining && timeRemaining.total < 86400000; // 24 hours
 
   // Force stop the timer immediately if the deadline crossover occurs while running
   useEffect(() => {
@@ -155,7 +184,7 @@ function TaskCard({ task }) {
   };
 
   return (
-    <div className={`task-row ${priority.className} ${overdue ? 'overdue' : ''}`}>
+    <div className={`task-row ${priority.className} ${overdue ? 'overdue' : ''} ${isDueSoon ? 'due-soon' : ''}`}>
       <div className="col-id">
         <span className="task-id">#{task.id}</span>
       </div>
@@ -199,6 +228,11 @@ function TaskCard({ task }) {
 
         <div className="task-badges">
           {overdue && localStatus !== 'Completed' && <span className="overdue-badge">Overdue</span>}
+          {isDueSoon && localStatus !== 'Completed' && (
+            <span className="due-soon-badge pulse">
+              Due in {timeRemaining.days > 0 ? `${timeRemaining.days}d ` : ''}{timeRemaining.hours}h {timeRemaining.minutes}m
+            </span>
+          )}
           {localStatus && (
             <select
               className={`status-chip ${STATUS_CONFIG[localStatus]?.className}`}
@@ -272,7 +306,7 @@ function TaskCard({ task }) {
       </div>
 
       <div className="col-deadline">
-        <span className={`date-text ${overdue ? 'overdue-date' : ''}`}>
+        <span className={`date-text ${overdue ? 'overdue-date' : ''} ${isDueSoon ? 'due-soon-date' : ''}`}>
           {formatDateTime(task.deadline)}
         </span>
       </div>

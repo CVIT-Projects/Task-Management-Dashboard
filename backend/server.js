@@ -13,9 +13,7 @@ import reportRoutes from './routes/reports.js';
 import timesheetRoutes from './routes/timesheets.js';
 import commentRoutes from './routes/comments.js';
 import notificationRoutes from './routes/notifications.js';
-import Task from './models/Task.js';
-import Notification from './models/Notification.js';
-import { createInternalNotification } from './controllers/notificationController.js';
+import { checkAllDeadlines } from './utils/deadlineChecker.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -74,44 +72,11 @@ app.use('/api/notifications', notificationRoutes);
 // No additional static serving code needed here.
 
 
-// Helper to check for approaching deadlines
-const checkDeadlines = async () => {
-  try {
-    const twentyFourHoursFromNow = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    const now = new Date();
-    
-    const tasks = await Task.find({
-      status: { $ne: 'Completed' },
-      assignedTo: { $ne: null },
-      deadline: { $gte: now, $lte: twentyFourHoursFromNow }
-    });
-
-    for (const task of tasks) {
-      // Deduplicate: Check if a notification already exists for this task
-      const existingNotif = await Notification.findOne({
-        taskId: task._id,
-        type: 'deadline_approaching'
-      });
-
-      if (!existingNotif) {
-        await createInternalNotification(
-          task.assignedTo,
-          `Deadline approaching for task: ${task.taskName}`,
-          'deadline_approaching',
-          task._id
-        );
-      }
-    }
-  } catch (error) {
-    console.error('Task deadline background check failed:', error);
-  }
-};
-
 // Start background job (every hour)
-setInterval(checkDeadlines, 3600000);
+setInterval(checkAllDeadlines, 3600000);
 
 // Run once immediately on startup
-checkDeadlines();
+checkAllDeadlines();
 
 // Global Error Handler Middleware
 app.use((err, req, res, next) => {

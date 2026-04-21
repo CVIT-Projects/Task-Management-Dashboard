@@ -1,5 +1,5 @@
 import express from 'express';
-import { getTasks, getTask, createTask, updateTask, deleteTask, updateTaskStatus } from '../controllers/taskController.js';
+import { getTasks, getTask, createTask, updateTask, deleteTask, updateTaskStatus, getDueSoonTasks } from '../controllers/taskController.js';
 import { verifyToken, requireAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -9,6 +9,7 @@ router.use(verifyToken);
 
 // GET routes (open to all authenticated users)
 router.get('/', getTasks);
+router.get('/due-soon', getDueSoonTasks);
 router.get('/:id', getTask);
 router.patch('/:id/status', updateTaskStatus);
 

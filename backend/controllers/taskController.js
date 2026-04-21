@@ -206,3 +206,25 @@ export const updateTaskStatus = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Get tasks due soon (next 24 hours)
+// @route   GET /api/tasks/due-soon
+// @access  Private
+export const getDueSoonTasks = async (req, res, next) => {
+  try {
+    const twentyFourHoursFromNow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const now = new Date();
+
+    const tasks = await Task.find({
+      assignedTo: req.user.id,
+      status: { $ne: 'Completed' },
+      deadline: { $gte: now, $lte: twentyFourHoursFromNow }
+    })
+    .populate('project', 'name color')
+    .sort({ deadline: 1 });
+
+    res.json(tasks);
+  } catch (error) {
+    next(error);
+  }
+};

@@ -171,6 +171,39 @@
   font-weight: 600;
 }
 
+/* Due Soon highlight */
+.task-row.due-soon {
+  border-left-color: #f59e0b !important;
+}
+
+.due-soon-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  padding: 2px 8px;
+  border-radius: 20px;
+  flex-shrink: 0;
+}
+
+.due-soon-date {
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+.pulse {
+  animation: pulseAnimation 2s infinite;
+}
+
+@keyframes pulseAnimation {
+  0% { opacity: 1; }
+  50% { opacity: 0.4; }
+  100% { opacity: 1; }
+}
+
 /* Priority Badges */
 .priority-badge {
   display: inline-flex;
