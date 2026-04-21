@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import Navbar from '../components/Navbar';
 import TaskTable from '../components/TaskTable';
+import KanbanBoard from '../components/KanbanBoard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useAuth } from '../contexts/AuthContext';
 import '../App.css';
@@ -125,6 +126,7 @@ function Dashboard() {
   const [projects, setProjects] = useState([]);
   const [projectFilter, setProjectFilter] = useState('all');
   const [tagFilter, setTagFilter] = useState('all');
+  const [viewType, setViewType] = useState(() => localStorage.getItem('dashboard_view') || 'table');
   const { token, user, logout } = useAuth();
 
   const fetchProjects = useCallback(async () => {
@@ -173,6 +175,10 @@ function Dashboard() {
     }, POLL_INTERVAL);
     return () => clearInterval(interval);
   }, [fetchTasks, fetchProjects]);
+
+  useEffect(() => {
+    localStorage.setItem('dashboard_view', viewType);
+  }, [viewType]);
 
   const processedTasks = tasks
     .filter((task) => {
@@ -238,8 +244,43 @@ function Dashboard() {
                 <option value="all">All Projects</option>
                 {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
+
+              <div className="view-toggle" style={{ display: 'flex', background: 'var(--bg-card)', padding: '2px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                <button 
+                  onClick={() => setViewType('table')}
+                  style={{ 
+                    padding: '4px 12px', 
+                    fontSize: '0.8rem', 
+                    borderRadius: '6px', 
+                    background: viewType === 'table' ? 'var(--accent)' : 'transparent',
+                    color: viewType === 'table' ? 'white' : 'var(--text-muted)',
+                    border: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  📋 List
+                </button>
+                <button 
+                  onClick={() => setViewType('kanban')}
+                  style={{ 
+                    padding: '4px 12px', 
+                    fontSize: '0.8rem', 
+                    borderRadius: '6px', 
+                    background: viewType === 'kanban' ? 'var(--accent)' : 'transparent',
+                    color: viewType === 'kanban' ? 'white' : 'var(--text-muted)',
+                    border: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  🧱 Kanban
+                </button>
+              </div>
             </div>
-            <TaskTable tasks={processedTasks} user={user} />
+            {viewType === 'table' ? (
+              <TaskTable tasks={processedTasks} user={user} />
+            ) : (
+              <KanbanBoard tasks={processedTasks} onRefresh={() => fetchTasks(false)} />
+            )}
           </>
         )}
       </main>
