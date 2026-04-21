@@ -2,6 +2,7 @@ import Task from '../models/Task.js';
 import TimeEntry from '../models/TimeEntry.js';
 import Comment from '../models/Comment.js';
 import { logActivity } from './commentController.js';
+import { createInternalNotification } from './notificationController.js';
 
 // @desc    Get all tasks
 // @route   GET /api/tasks
@@ -89,6 +90,14 @@ export const createTask = async (req, res, next) => {
     }
 
     const task = await Task.create(taskData);
+    if (task.assignedTo) {
+      await createInternalNotification(
+        task.assignedTo,
+        `New task assigned: ${task.taskName}`,
+        'task_assigned',
+        task.id
+      );
+    }
     res.status(201).json(task);
   } catch (error) {
     next(error);
@@ -100,14 +109,25 @@ export const createTask = async (req, res, next) => {
 // @access  Private/Admin
 export const updateTask = async (req, res, next) => {
   try {
+    const originalTask = await Task.findById(req.params.id);
+    if (!originalTask) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
     const task = await Task.findByIdAndUpdate(
       req.params.id,
       req.body,
       { new: true, runValidators: true } // Returns the updated document
     );
 
-    if (!task) {
-      return res.status(404).json({ message: 'Task not found' });
+    // Trigger notification if reassigned
+    if (req.body.assignedTo && String(req.body.assignedTo) !== String(originalTask.assignedTo)) {
+      await createInternalNotification(
+        req.body.assignedTo,
+        `Task reassigned to you: ${task.taskName}`,
+        'task_assigned',
+        task.id
+      );
     }
 
     res.json(task);
