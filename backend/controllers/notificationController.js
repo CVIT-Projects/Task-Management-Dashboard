@@ -7,7 +7,7 @@ export const getMyNotifications = async (req, res, next) => {
     await checkDeadlinesForUser(req.user.id);
 
     const notifications = await Notification.find({ userId: req.user.id })
-      .populate('taskId', 'deadline taskName')
+      .populate('taskId', 'taskName deadline')
       .sort({ createdAt: -1 })
       .limit(50);
     res.json(notifications);

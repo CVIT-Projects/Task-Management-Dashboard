@@ -4,10 +4,9 @@ import './Navbar.css';
 function getTimeRemaining(deadline) {
   const total = Date.parse(deadline) - Date.parse(new Date());
   if (total <= 0) return null;
-  const seconds = Math.floor((total / 1000) % 60);
   const minutes = Math.floor((total / 1000 / 60) % 60);
   const hours = Math.floor((total / (1000 * 60 * 60)) % 24);
-  return { total, hours, minutes, seconds };
+  return { total, hours, minutes };
 }
 
 function LiveTimer({ deadline }) {
@@ -18,14 +17,14 @@ function LiveTimer({ deadline }) {
       const remaining = getTimeRemaining(deadline);
       setTimeLeft(remaining);
       if (!remaining) clearInterval(interval);
-    }, 1000); // Update every 1 second
+    }, 60000); // Update every 1 minute
     return () => clearInterval(interval);
   }, [deadline]);
 
   if (!timeLeft) return <span className="timer-expired">Expired</span>;
   return (
     <span className="live-timer">
-      ⏳ {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s left
+      ⏳ {timeLeft.hours}h {timeLeft.minutes}m left
     </span>
   );
 }

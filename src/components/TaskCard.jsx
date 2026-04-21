@@ -41,11 +41,10 @@ function formatDuration(seconds) {
 function getTimeRemaining(deadlineStr) {
   const total = Date.parse(deadlineStr) - Date.parse(new Date());
   if (total <= 0) return null;
-  const seconds = Math.floor((total / 1000) % 60);
   const minutes = Math.floor((total / 1000 / 60) % 60);
   const hours = Math.floor((total / (1000 * 60 * 60)) % 24);
   const days = Math.floor(total / (1000 * 60 * 60 * 24));
-  return { total, days, hours, minutes, seconds };
+  return { total, days, hours, minutes };
 }
 
 function TaskCard({ task }) {
@@ -75,7 +74,7 @@ function TaskCard({ task }) {
       const remaining = getTimeRemaining(task.deadline);
       setTimeRemaining(remaining);
       if (!remaining) clearInterval(interval);
-    }, 1000); // Ticking every second
+    }, 60000); // Update every minute
     
     return () => clearInterval(interval);
   }, [task.deadline, overdue, localStatus]);
@@ -231,7 +230,7 @@ function TaskCard({ task }) {
           {overdue && localStatus !== 'Completed' && <span className="overdue-badge">Overdue</span>}
           {isDueSoon && localStatus !== 'Completed' && (
             <span className="due-soon-badge pulse">
-              Due in {timeRemaining.days > 0 ? `${timeRemaining.days}d ` : ''}{timeRemaining.hours}h {timeRemaining.minutes}m {timeRemaining.seconds}s
+              Due in {timeRemaining.days > 0 ? `${timeRemaining.days}d ` : ''}{timeRemaining.hours}h {timeRemaining.minutes}m
             </span>
           )}
           {localStatus && (
