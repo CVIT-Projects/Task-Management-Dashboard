@@ -4,6 +4,23 @@ import User from '../models/User.js';
 import WeeklyTimesheet from '../models/WeeklyTimesheet.js';
 import { logActivity } from './commentController.js';
 
+// Helper to check if a specific date belongs to an approved timesheet week
+const isWeekLocked = async (userId, date) => {
+  if (!date) return false;
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  const monday = new Date(d.setDate(diff));
+  monday.setHours(0, 0, 0, 0);
+
+  const approvedTimesheet = await WeeklyTimesheet.findOne({
+    user: userId,
+    weekStart: monday,
+    status: 'approved'
+  });
+  return !!approvedTimesheet;
+};
+
 // @desc    Start a new timer for a task
 // @route   POST /api/time-entries/start
 // @access  Private
@@ -131,10 +148,16 @@ export const getMyTimeEntries = async (req, res, next) => {
 // @access  Private
 export const deleteTimeEntry = async (req, res, next) => {
   try {
-    // Users can only delete their own time entries
-    const entry = await TimeEntry.findOneAndDelete({ _id: req.params.id, user: req.user.id });
+    // 1. Fetch entry to check date
+    const entry = await TimeEntry.findOne({ _id: req.params.id, user: req.user.id });
     if (!entry) return res.status(404).json({ message: 'Time entry not found or unauthorized' });
-    
+
+    // 2. Check if week is approved
+    if (await isWeekLocked(req.user.id, entry.startTime)) {
+      return res.status(403).json({ message: 'Cannot delete entries from an approved timesheet week.' });
+    }
+
+    await entry.deleteOne();
     res.json({ message: 'Time entry deleted' });
   } catch (error) {
     next(error);
@@ -198,26 +221,12 @@ export const updateTimeEntry = async (req, res, next) => {
     const entry = await TimeEntry.findOne({ _id: req.params.id, user: req.user.id });
     if (!entry) return res.status(404).json({ message: 'Time entry not found or unauthorized' });
 
-    // 2. Approved Timesheet Check
-    // We need to check if the week containing this entry's startTime is already approved
-    const entryDate = new Date(entry.startTime);
-    // getMonday logic consistent with frontend
-    const day = entryDate.getDay();
-    const diff = entryDate.getDate() - day + (day === 0 ? -6 : 1);
-    const monday = new Date(entryDate.setDate(diff));
-    monday.setHours(0, 0, 0, 0);
-
-    const approvedTimesheet = await WeeklyTimesheet.findOne({
-      user: req.user.id,
-      weekStart: monday,
-      status: 'approved'
-    });
-
-    if (approvedTimesheet) {
+    // 2. Approved Timesheet Check (Original Week)
+    if (await isWeekLocked(req.user.id, entry.startTime)) {
       return res.status(403).json({ message: 'Cannot edit entries for an approved timesheet week.' });
     }
 
-    // 3. Update Fields
+    // 3. Update Fields & Approved Timesheet Check (Target Week)
     if (taskId) entry.task = taskId;
     if (description !== undefined) entry.description = description;
     if (billable !== undefined) entry.billable = billable;
@@ -228,6 +237,13 @@ export const updateTimeEntry = async (req, res, next) => {
 
       if (newEnd && newEnd < newStart) {
         return res.status(400).json({ message: 'End time must be after start time' });
+      }
+
+      // If startTime is changing, check if the target week is locked
+      if (startTime && (new Date(startTime).getTime() !== new Date(entry.startTime).getTime())) {
+        if (await isWeekLocked(req.user.id, newStart)) {
+          return res.status(403).json({ message: 'Cannot move time entries into an approved timesheet week.' });
+        }
       }
 
       entry.startTime = newStart;

@@ -408,37 +408,44 @@ export default function Timesheet() {
                       </td>
                     </tr>
                   ) : (
-                    entries.map(entry => (
-                      <tr key={entry.id}>
-                        <td>{new Date(entry.startTime).toLocaleDateString()}</td>
-                        <td>{entry.task?.taskName || 'Unknown Task'}</td>
-                        <td className="desc-cell" title={entry.description}>{entry.description || '—'}</td>
-                        <td>{new Date(entry.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
-                        <td>{entry.endTime ? new Date(entry.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Running...'}</td>
-                        <td>{formatDuration(entry.duration)}</td>
-                        <td style={{ textAlign: 'center' }}>{entry.billable ? '✅' : '—'}</td>
-                        <td style={{ textAlign: 'center' }}>
-                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                            <button 
-                              className="edit-entry-btn" 
-                              onClick={() => handleEditClick(entry)}
-                              disabled={weekSubmission?.status === 'approved'}
-                              style={{ padding: '4px 8px', fontSize: '0.75rem', borderRadius: '4px', background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border)', cursor: 'pointer' }}
-                            >
-                              Edit
-                            </button>
-                            <button 
-                              className="delete-entry-btn" 
-                              onClick={() => handleDeleteEntry(entry.id)}
-                              disabled={weekSubmission?.status === 'approved'}
-                              style={{ padding: '4px 8px', fontSize: '0.75rem', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)', cursor: 'pointer' }}
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
+                    entries.map(entry => {
+                      const entryUserId = entry.user?.id || entry.user?._id || entry.user;
+                      const isOwner = user && String(entryUserId) === String(user.id);
+                      const isLocked = weekSubmission?.status === 'approved';
+                      const canModify = isOwner && !isLocked;
+
+                      return (
+                        <tr key={entry.id}>
+                          <td>{new Date(entry.startTime).toLocaleDateString()}</td>
+                          <td>{entry.task?.taskName || 'Unknown Task'}</td>
+                          <td className="desc-cell" title={entry.description}>{entry.description || '—'}</td>
+                          <td>{new Date(entry.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                          <td>{entry.endTime ? new Date(entry.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Running...'}</td>
+                          <td>{formatDuration(entry.duration)}</td>
+                          <td style={{ textAlign: 'center' }}>{entry.billable ? '✅' : '—'}</td>
+                          <td style={{ textAlign: 'center' }}>
+                            <div className="actions-cell">
+                              <button 
+                                className="edit-entry-btn" 
+                                onClick={() => handleEditClick(entry)}
+                                disabled={!canModify}
+                                title={isLocked ? "Locked (Week Approved)" : !isOwner ? "Only owners can edit" : "Edit entry"}
+                              >
+                                Edit
+                              </button>
+                              <button 
+                                className="delete-entry-btn" 
+                                onClick={() => handleDeleteEntry(entry.id)}
+                                disabled={!canModify}
+                                title={isLocked ? "Locked (Week Approved)" : !isOwner ? "Only owners can delete" : "Delete entry"}
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>

@@ -348,6 +348,48 @@
   background: var(--bg-hover);
 }
 
+/* Time Entry Action Buttons */
+.edit-entry-btn, .delete-entry-btn {
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid var(--border);
+}
+
+.edit-entry-btn {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.edit-entry-btn:hover:not(:disabled) {
+  background: var(--border);
+}
+
+.delete-entry-btn {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.delete-entry-btn:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+.edit-entry-btn:disabled, .delete-entry-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed !important;
+  filter: grayscale(1);
+}
+
+.actions-cell {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
 .approval-actions {
   display: flex;
   align-items: center;
