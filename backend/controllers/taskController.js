@@ -3,6 +3,7 @@ import TimeEntry from '../models/TimeEntry.js';
 import Comment from '../models/Comment.js';
 import { logActivity } from './commentController.js';
 import { createInternalNotification } from './notificationController.js';
+import Notification from '../models/Notification.js';
 
 // @desc    Get all tasks
 // @route   GET /api/tasks
@@ -153,10 +154,11 @@ export const deleteTask = async (req, res, next) => {
       return res.status(404).json({ message: 'Task not found' });
     }
 
-    // Cleanup: Delete orphaned comments and time entries associated with this task
+    // Cleanup: Delete orphaned comments, time entries, and notifications associated with this task
     await Promise.all([
       Comment.deleteMany({ task: req.params.id }),
-      TimeEntry.deleteMany({ task: req.params.id })
+      TimeEntry.deleteMany({ task: req.params.id }),
+      Notification.deleteMany({ taskId: req.params.id })
     ]);
 
     res.json({ message: 'Task deleted successfully' });
