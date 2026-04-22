@@ -178,7 +178,7 @@ export const createManualEntry = async (req, res, next) => {
         const end = new Date(endTime);
         const duration = Math.floor((end - start) / 1000);
 
-        if (duration < 0) {
+        if (duration <= 0) {
             return res.status(400).json({ message: 'End time must be after start time' });
         }
 
@@ -235,7 +235,7 @@ export const updateTimeEntry = async (req, res, next) => {
       const newStart = startTime ? new Date(startTime) : entry.startTime;
       const newEnd = endTime ? new Date(endTime) : entry.endTime;
 
-      if (newEnd && newEnd < newStart) {
+      if (newEnd && newEnd <= newStart) {
         return res.status(400).json({ message: 'End time must be after start time' });
       }
 
