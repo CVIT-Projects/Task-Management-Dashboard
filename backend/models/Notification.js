@@ -32,6 +32,8 @@ const notificationSchema = new mongoose.Schema({
   timestamps: true
 });
 
+notificationSchema.index({ createdAt: 1 }, { expireAfterSeconds: 2592000 });
+
 notificationSchema.set('toJSON', {
   transform: (doc, ret) => {
     ret.id = ret._id;
