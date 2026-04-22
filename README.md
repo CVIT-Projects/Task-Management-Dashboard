@@ -27,6 +27,7 @@ A full-stack task management application with time tracking, project grouping, b
 - View tasks assigned to you (regular users see only their own; admins see all)
 - Filter by project, tag, and priority
 - Search by task name or assigned person
+- **Security & RBAC**: Strict role-based access control prevents regular users from accessing tasks not assigned to them (IDOR Protection)
 - Select between List View and Kanban Board View
 - Auto-sort by deadline then priority
 - Overdue task highlighting
@@ -104,6 +105,7 @@ A full-stack task management application with time tracking, project grouping, b
 - **Hourly Proactive Notifications**: Users receive fresh in-app reminders for urgent tasks
 - **Dropdown Timers**: Live "Time Left" indicator directly inside the notification dropdown
 - **Populated Task Context**: Notifications link directly to task details
+- **Automated Cleanup**: Deleting a task automatically removes all related notifications for all users
 
 ### Kanban Board
 - **Status Columns**: Visual drag-agnostic columns (Not Started, In Progress, Blocked, Completed)
