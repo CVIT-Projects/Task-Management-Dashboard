@@ -73,9 +73,7 @@ export const getTask = async (req, res, next) => {
     }
 
     // Role-based access control: regular users can only see tasks assigned to them
-    const assignedId = task.assignedTo ? String(task.assignedTo._id || task.assignedTo) : null;
-    
-    if (req.user.role !== 'admin' && assignedId !== req.user.id) {
+    if (req.user.role !== 'admin' && String(task.assignedTo?._id) !== req.user.id) {
       return res.status(403).json({ message: 'Not authorized to view this task' });
     }
 
