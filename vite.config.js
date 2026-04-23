@@ -17,7 +17,7 @@ export default defineConfig({
       },
     },
   ],
-  appType: 'mpa',
+  appType: 'spa',
   server: {
     port: 5173,
     strictPort: true,

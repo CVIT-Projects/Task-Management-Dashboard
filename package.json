@@ -11,7 +11,8 @@
     "start": "node backend/server.js",
     "server:dev": "node --watch backend/server.js",
     "dev:all": "concurrently -n backend,frontend -c bgBlue,bgGreen \"npm run server:dev\" \"npm run dev\"",
-    "deploy": "npm run build && gcloud app deploy --quiet"
+    "deploy": "npm run build && gcloud app deploy --quiet",
+    "test:uat": "playwright test"
   },
   "dependencies": {
     "axios": "^1.13.6",
@@ -31,6 +32,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@playwright/test": "^1.59.1",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.0",
@@ -39,6 +41,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.4.0",
+    "playwright": "^1.59.1",
     "vite": "^8.0.0"
   }
 }
