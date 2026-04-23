@@ -195,4 +195,93 @@ test.describe('Task Management Dashboard - Full 9-Section UAT Suite', () => {
         await page.click('#submitBtn');
         await expect(page.locator('body')).toContainText('$ 185 / hr');
     });
+
+    test('14. Admin Tools: Bulk Actions', async ({ page }) => {
+        await page.goto('/admin/');
+        
+        // Create 2 tasks
+        for (let i = 1; i <= 2; i++) {
+            await page.fill('#taskName', `Bulk Task ${i} ${STAMP}`);
+            await page.click('#task-form button[type="submit"]');
+            await page.waitForTimeout(500);
+        }
+
+        // Select All
+        await page.click('#selectAllTasks');
+        await expect(page.locator('#bulkActionBar')).not.toHaveClass(/hidden/);
+        await expect(page.locator('#selectedCount')).toHaveText('2');
+
+        // Reassign (to self)
+        await page.selectOption('#bulkAssignedTo', { label: new RegExp(ADMIN_NAME) });
+        await page.click('button:has-text("Reassign")');
+        
+        await expect(page.locator('.toast.success')).toBeVisible();
+        await expect(page.locator('#bulkActionBar')).toHaveClass(/hidden/);
+    });
+
+    test('15. Task Dependencies (Blocked By)', async ({ page }) => {
+        await page.goto('/admin/');
+        
+        // 1. Create Blocker Task
+        const blockerName = `Blocker Task ${STAMP}`;
+        await page.fill('#taskName', blockerName);
+        await page.click('#task-form button[type="submit"]');
+        await page.waitForSelector(`div.task-card:has-text("${blockerName}")`);
+
+        // 2. Create Blocked Task
+        const blockedName = `Blocked Task ${STAMP}`;
+        await page.fill('#taskName', blockedName);
+        await page.selectOption('#assignedTo', { label: new RegExp(USER_NAME) });
+        // Select the blocker in the multiple-select dropdown
+        await page.selectOption('#blockedBy', { label: new RegExp(blockerName) });
+        await page.click('#task-form button[type="submit"]');
+
+        // 3. Login as User and check lockout
+        await page.goto('/');
+        await page.click('.logout-btn');
+        await page.goto('/login');
+        await page.fill('#email', USER_EMAIL);
+        await page.fill('#password', TEST_PASS);
+        await page.click('button.auth-submit-btn');
+
+        const card = page.locator(`.task-card:has-text("${blockedName}")`);
+        await expect(card.locator('.blocked-badge-main')).toBeVisible();
+        await expect(card.locator('button:has-text("🚫 Blocked")')).toBeDisabled();
+
+        // 4. Admin completes blocker
+        await page.click('.logout-btn');
+        await page.goto('/login');
+        await page.fill('#email', ADMIN_EMAIL);
+        await page.fill('#password', TEST_PASS);
+        await page.click('button.auth-submit-btn');
+        
+        await page.locator(`.task-card:has-text("${blockerName}") select`).selectOption('Completed');
+        await page.waitForTimeout(1000);
+
+        // 5. User check unblocked
+        await page.click('.logout-btn');
+        await page.goto('/login');
+        await page.fill('#email', USER_EMAIL);
+        await page.fill('#password', TEST_PASS);
+        await page.click('button.auth-submit-btn');
+
+        const unblockedCard = page.locator(`.task-card:has-text("${blockedName}")`);
+        await expect(unblockedCard.locator('.blocked-badge-main')).not.toBeVisible();
+        await expect(unblockedCard.locator('.timer-btn')).not.toBeDisabled();
+    });
+
+    test('16. Recurring Task Setup', async ({ page }) => {
+        await page.goto('/admin/');
+        
+        const recurringName = `Recurring Task ${STAMP}`;
+        await page.fill('#taskName', recurringName);
+        await page.check('#recurringEnabled');
+        await page.selectOption('#frequency', 'weekly');
+        await page.click('#task-form button[type="submit"]');
+
+        await page.waitForSelector(`div.task-card:has-text("${recurringName}")`);
+        // Check for the repeating emoji indicator on the card
+        await page.goto('/');
+        await expect(page.locator(`.task-card:has-text("${recurringName}") .recurring-badge`)).toBeVisible();
+    });
 });

@@ -6,19 +6,21 @@
 
 # Test info
 
-- Name: uat.spec.js >> Task Management Dashboard - Full 9-Section UAT Suite >> 3. IDOR Protection Verification
-- Location: tests\uat.spec.js:37:5
+- Name: uat.spec.js >> Task Management Dashboard - Full 9-Section UAT Suite >> 1. Admin Registration
+- Location: tests/uat.spec.js:16:5
 
 # Error details
 
 ```
-Test timeout of 30000ms exceeded.
-```
+Error: expect(page).toHaveURL(expected) failed
 
-```
-Error: page.waitForSelector: Test timeout of 30000ms exceeded.
+Expected: "http://localhost:5173/"
+Received: "http://localhost:5173/register"
+Timeout:  5000ms
+
 Call log:
-  - waiting for locator('#taskName') to be visible
+  - Expect "toHaveURL" with timeout 5000ms
+    9 × unexpected value "http://localhost:5173/register"
 
 ```
 
@@ -27,22 +29,35 @@ Call log:
 ```yaml
 - generic [ref=e4]:
   - generic [ref=e5]:
-    - heading "Sign in to Taskboard" [level=1] [ref=e6]
-    - paragraph [ref=e7]: Welcome back! Please enter your details.
+    - heading "Create an account" [level=1] [ref=e6]
+    - paragraph [ref=e7]: Join Taskboard to start managing tasks seamlessly.
   - generic [ref=e8]:
-    - generic [ref=e9]:
-      - generic [ref=e10]: Email address
-      - textbox "Email address" [ref=e11]:
+    - generic [ref=e9]: Registration failed. Please try again.
+    - generic [ref=e10]:
+      - generic [ref=e11]: Full Name
+      - textbox "Full Name" [ref=e12]:
+        - /placeholder: John Doe
+        - text: Admin 1776943759006
+    - generic [ref=e13]:
+      - generic [ref=e14]: Email address
+      - textbox "Email address" [ref=e15]:
         - /placeholder: you@example.com
-    - generic [ref=e12]:
-      - generic [ref=e13]: Password
-      - textbox "Password" [ref=e14]:
-        - /placeholder: ••••••••
-    - button "Sign in" [ref=e15] [cursor=pointer]
-  - generic [ref=e16]:
-    - text: New to Taskboard?
-    - link "Create an account" [ref=e17] [cursor=pointer]:
-      - /url: /register
+        - text: admin-1776943759006@uat.com
+    - generic [ref=e16]:
+      - generic [ref=e17]: Password
+      - textbox "Password" [ref=e18]:
+        - /placeholder: Min. 8 characters
+        - text: Password123!
+    - generic [ref=e19]:
+      - generic [ref=e20]: Admin Secret Password (Optional)
+      - textbox "Admin Secret Password (Optional)" [ref=e21]:
+        - /placeholder: Provide key to get admin role
+        - text: admin123
+    - button "Sign up" [active] [ref=e22] [cursor=pointer]
+  - generic [ref=e23]:
+    - text: Already have an account?
+    - link "Sign in here" [ref=e24] [cursor=pointer]:
+      - /url: /login
 ```
 
 # Test source
@@ -70,7 +85,8 @@ Call log:
   20  |         await page.fill('#password', TEST_PASS);
   21  |         await page.fill('#adminSecret', ADMIN_SECRET);
   22  |         await page.click('button.auth-submit-btn');
-  23  |         await expect(page).toHaveURL('/');
+> 23  |         await expect(page).toHaveURL('/');
+      |                            ^ Error: expect(page).toHaveURL(expected) failed
   24  |         await expect(page.locator('a.admin-link-btn[href="/admin/"]')).toBeVisible();
   25  |     });
   26  | 
@@ -92,8 +108,7 @@ Call log:
   42  |         await page.click('button.auth-submit-btn');
   43  | 
   44  |         await page.goto('/admin/');
-> 45  |         await page.waitForSelector('#taskName');
-      |                    ^ Error: page.waitForSelector: Test timeout of 30000ms exceeded.
+  45  |         await page.waitForSelector('#taskName');
   46  |         await page.fill('#taskName', `IDOR Test Task ${STAMP}`);
   47  |         // Assign to self (Admin)
   48  |         await page.selectOption('#assignedTo', { label: new RegExp(ADMIN_NAME) });
@@ -172,26 +187,4 @@ Call log:
   121 |             const val1 = await timer.textContent();
   122 |             await page.waitForTimeout(3000);
   123 |             const val2 = await timer.textContent();
-  124 |             expect(val1).toBe(val2); // Should not update every second
-  125 |         }
-  126 |     });
-  127 | 
-  128 |     test('8. Deadline Overdue Lockout', async ({ page }) => {
-  129 |         // Admin creates overdue task
-  130 |         await page.goto('/login');
-  131 |         await page.fill('#email', ADMIN_EMAIL);
-  132 |         await page.fill('#password', TEST_PASS);
-  133 |         await page.click('button.auth-submit-btn');
-  134 |         await page.goto('/admin/');
-  135 |         
-  136 |         const past = new Date(Date.now() - 3600000).toISOString().slice(0, 16);
-  137 |         await page.fill('#taskName', `Locked Task ${STAMP}`);
-  138 |         await page.fill('#deadline', past);
-  139 |         await page.selectOption('#assignedTo', { label: new RegExp(USER_NAME) });
-  140 |         await page.click('#task-form button[type="submit"]');
-  141 | 
-  142 |         // User checks lockout
-  143 |         await page.click('.logout-btn');
-  144 |         await page.goto('/login');
-  145 |         await page.fill('#email', USER_EMAIL);
 ```

@@ -211,63 +211,7 @@ export const updateTaskStatus = async (req, res, next) => {
       status
     );
 
-    // Auto-create next instance for recurring tasks
-    if (status === 'Completed' && task.recurring && task.recurring.enabled) {
-      try {
-        const nextStart = new Date(task.startDateTime);
-        const nextDeadline = new Date(task.deadline);
-        const freq = task.recurring.frequency;
 
-        if (freq === 'daily') {
-          nextStart.setDate(nextStart.getDate() + 1);
-          nextDeadline.setDate(nextDeadline.getDate() + 1);
-        } else if (freq === 'weekly') {
-          nextStart.setDate(nextStart.getDate() + 7);
-          nextDeadline.setDate(nextDeadline.getDate() + 7);
-        } else if (freq === 'monthly') {
-          nextStart.setMonth(nextStart.getMonth() + 1);
-          nextDeadline.setMonth(nextDeadline.getMonth() + 1);
-        }
-
-        const newTaskData = {
-          taskName: task.taskName,
-          assignedTo: task.assignedTo,
-          project: task.project,
-          priority: task.priority,
-          isBillable: task.isBillable,
-          tags: task.tags,
-          startDateTime: nextStart,
-          deadline: nextDeadline,
-          recurring: task.recurring,
-          parentTask: task._id,
-          createdBy: task.createdBy,
-          status: 'Not Started'
-        };
-
-        const nextTask = await Task.create(newTaskData);
-        
-        // Log activity for the new task
-        logActivity(
-          nextTask._id,
-          req.user.id,
-          `Automated: Created as the next instance of recurring task #${task.id}`,
-          'activity'
-        );
-
-        // Notify assignee about the new recurring instance
-        if (nextTask.assignedTo) {
-          await createInternalNotification(
-            nextTask.assignedTo,
-            `New recurring instance: ${nextTask.taskName}`,
-            'task_assigned',
-            nextTask.id
-          );
-        }
-      } catch (err) {
-        console.error('Failed to create next recurring task instance:', err);
-        // We don't fail the original request if the recurrence fails
-      }
-    }
 
     res.json(task);
   } catch (error) {

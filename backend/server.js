@@ -14,6 +14,7 @@ import timesheetRoutes from './routes/timesheets.js';
 import commentRoutes from './routes/comments.js';
 import notificationRoutes from './routes/notifications.js';
 import { checkAllDeadlines } from './utils/deadlineChecker.js';
+import { processRecurringTasks } from './utils/recurringChecker.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -73,10 +74,14 @@ app.use('/api/notifications', notificationRoutes);
 
 
 // Start background job (every hour)
-setInterval(checkAllDeadlines, 3600000);
+setInterval(() => {
+  checkAllDeadlines();
+  processRecurringTasks();
+}, 3600000);
 
 // Run once immediately on startup
 checkAllDeadlines();
+processRecurringTasks();
 
 // Global Error Handler Middleware
 app.use((err, req, res, next) => {
