@@ -77,6 +77,14 @@
   color: var(--text-primary);
 }
 
+.recurring-badge {
+  margin-left: 8px;
+  font-size: 0.8rem;
+  cursor: help;
+  display: inline-block;
+  vertical-align: middle;
+}
+
 .overdue-badge {
   font-size: 0.65rem;
   font-weight: 700;

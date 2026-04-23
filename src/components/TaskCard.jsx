@@ -198,7 +198,12 @@ function TaskCard({ task }) {
             {task.project.name}
           </span>
         )}
-        <span className="task-name">{task.taskName}</span>
+        <span className="task-name">
+          {task.taskName}
+          {task.recurring && task.recurring.enabled && (
+            <span className="recurring-badge" title={`Recurring: ${task.recurring.frequency}`}>🔁</span>
+          )}
+        </span>
         
         {task.isBillable && (
           <span className="project-badge" style={{ background: '#10b981', marginLeft: '8px' }}>

@@ -103,9 +103,24 @@
           </select>
         </div>
 
-        <div class="form-group" style="display: flex; align-items: center; gap: 8px; margin-bottom: 24px;">
-          <input type="checkbox" id="isBillable" style="width: auto;" />
-          <label for="isBillable" style="margin-bottom: 0;">Task is Billable</label>
+        <div class="form-group" style="display: flex; align-items: center; gap: 20px; margin-bottom: 24px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="isBillable" style="width: auto;" />
+            <label for="isBillable" style="margin-bottom: 0;">Task is Billable</label>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="recurringEnabled" style="width: auto;" onchange="toggleFrequency(this.checked)" />
+            <label for="recurringEnabled" style="margin-bottom: 0;">Recurring</label>
+          </div>
+        </div>
+
+        <div id="frequencyGroup" class="form-group hidden">
+          <label for="frequency">Frequency</label>
+          <select id="frequency">
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
         </div>
 
         <div class="form-group">

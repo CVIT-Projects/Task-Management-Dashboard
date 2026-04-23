@@ -189,6 +189,10 @@ async function handleSubmit(e) {
       .map(t => t.trim().toLowerCase())
       .filter(Boolean),
     blockedBy: Array.from(document.getElementById('blockedBy').selectedOptions).map(opt => opt.value),
+    recurring: {
+      enabled: document.getElementById('recurringEnabled').checked,
+      frequency: document.getElementById('frequency').value
+    }
   };
 
   const initialActivityComment = document.getElementById('adminActivityComment').value.trim();
@@ -251,6 +255,11 @@ function populateEditForm(task) {
   document.getElementById('fileName').value = task.notes?.fileName || '';
   document.getElementById('downloadUrl').value = task.notes?.downloadUrl || '';
   document.getElementById('tags').value = (task.tags || []).join(', ');
+  
+  const isRecurring = !!task.recurring?.enabled;
+  document.getElementById('recurringEnabled').checked = isRecurring;
+  document.getElementById('frequency').value = task.recurring?.frequency || 'daily';
+  toggleFrequency(isRecurring);
 
   // Update blockedBy dropdown and set selections
   updateBlockedByDropdown();
@@ -276,7 +285,14 @@ function resetForm() {
   // Clear the activity comment as well
   const commentField = document.getElementById('adminActivityComment');
   if (commentField) commentField.value = '';
+  document.getElementById('frequencyGroup').classList.add('hidden');
   updateBlockedByDropdown();
+}
+
+function toggleFrequency(enabled) {
+  const group = document.getElementById('frequencyGroup');
+  if (enabled) group.classList.remove('hidden');
+  else group.classList.add('hidden');
 }
 
 function toDatetimeLocal(str) {
@@ -643,5 +659,6 @@ window.logout = logout;
 window.closeModal = closeModal;
 window.cancelEdit = cancelEdit;
 window.confirmDelete = confirmDelete;
+window.toggleFrequency = toggleFrequency;
 
 init();
