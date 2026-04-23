@@ -65,7 +65,16 @@ const taskSchema = new mongoose.Schema({
   blockedBy: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Task'
-  }]
+  }],
+  recurring: {
+    enabled: { type: Boolean, default: false },
+    frequency: { type: String, enum: ['daily', 'weekly', 'monthly'], default: 'daily' }
+  },
+  parentTask: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Task',
+    default: null
+  }
 }, {
   timestamps: true
 });
