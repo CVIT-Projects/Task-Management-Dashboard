@@ -35,6 +35,7 @@ function logout() {
 const API_BASE = window.location.origin;
 const API_URL = `${API_BASE}/api/tasks`;
 let allTasks = [];
+let selectedTasks = new Set();
 let deleteTargetId = null;
 
 // ─── Init ───────────────────────────────────────────────────────────────────
@@ -57,13 +58,14 @@ async function fetchUsers() {
     if (!res.ok) return;
     const users = await res.json();
     const select = document.getElementById('assignedTo');
-    select.innerHTML = '<option value="">-- Select Assignee --</option>';
-    users.forEach(u => {
-      const opt = document.createElement('option');
-      opt.value = u.id || u._id;   // id is set by toJSON transform
-      opt.textContent = `${u.name} (${u.email})`;
-      select.appendChild(opt);
-    });
+    const bulkSelect = document.getElementById('bulkAssignedTo');
+    const optionsHtml = '<option value="">Reassign to...</option>' + 
+      users.map(u => `<option value="${u.id || u._id}">${u.name} (${u.email})</option>`).join('');
+    
+    select.innerHTML = '<option value="">-- Select Assignee --</option>' + 
+      users.map(u => `<option value="${u.id || u._id}">${u.name} (${u.email})</option>`).join('');
+    
+    if (bulkSelect) bulkSelect.innerHTML = optionsHtml;
   } catch (e) {
     console.warn('Could not load users for dropdown:', e.message);
   }
@@ -339,6 +341,9 @@ function buildTaskCard(task) {
   return `
     <div class="task-card ${priorityClass} ${overdueClass}">
       <div class="task-card-header">
+        <div class="task-selection">
+          <input type="checkbox" class="task-checkbox" data-task-id="${task.id}" ${selectedTasks.has(String(task.id)) ? 'checked' : ''} />
+        </div>
         <div class="task-card-title-row">
           <span class="task-id-badge">#${task.id}</span>
           <h3 class="task-card-name">${escapeHtml(task.taskName)}</h3>
@@ -541,9 +546,97 @@ if (listEl) {
       toggleAdminActivity(taskId);
     } else if (target.classList.contains('admin-post-comment-btn')) {
       postAdminComment(taskId);
+    } else if (target.classList.contains('task-checkbox')) {
+      toggleTaskSelection(taskId, target.checked);
     }
   });
 }
+
+// ─── Bulk Action Logic ───────────────────────────────────────────────────────
+
+function toggleTaskSelection(id, isSelected) {
+  if (isSelected) {
+    selectedTasks.add(String(id));
+  } else {
+    selectedTasks.delete(String(id));
+    document.getElementById('selectAllTasks').checked = false;
+  }
+  updateBulkBar();
+}
+
+function toggleSelectAll(checked) {
+  const checkboxes = document.querySelectorAll('.task-checkbox');
+  checkboxes.forEach(cb => {
+    cb.checked = checked;
+    const id = cb.getAttribute('data-task-id');
+    if (checked) selectedTasks.add(String(id));
+    else selectedTasks.delete(String(id));
+  });
+  updateBulkBar();
+}
+
+function updateBulkBar() {
+  const bar = document.getElementById('bulkActionBar');
+  const countSpan = document.getElementById('selectedCount');
+  
+  if (selectedTasks.size > 0) {
+    bar.classList.remove('hidden');
+    countSpan.textContent = selectedTasks.size;
+  } else {
+    bar.classList.add('hidden');
+  }
+}
+
+function clearSelection() {
+  selectedTasks.clear();
+  document.getElementById('selectAllTasks').checked = false;
+  const checkboxes = document.querySelectorAll('.task-checkbox');
+  checkboxes.forEach(cb => cb.checked = false);
+  updateBulkBar();
+}
+
+async function handleBulkAction(action) {
+  const taskIds = Array.from(selectedTasks);
+  let payload = {};
+
+  if (action === 'reassign') {
+    const userId = document.getElementById('bulkAssignedTo').value;
+    if (!userId) return showToast('Please select a user to reassign to.', 'error');
+    payload = { assignedTo: userId };
+  } else if (action === 'status_change') {
+    const status = document.getElementById('bulkStatus').value;
+    if (!status) return showToast('Please select a status.', 'error');
+    payload = { status };
+  } else if (action === 'delete') {
+    if (!confirm(`Are you sure you want to delete ${taskIds.length} tasks? This action cannot be undone.`)) {
+      return;
+    }
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/tasks/bulk`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ taskIds, action, payload })
+    });
+
+    if (!res.ok) {
+      if (handleUnauthorized(res.status)) return;
+      throw new Error('Bulk action failed');
+    }
+
+    showToast(`✅ Bulk ${action} completed!`, 'success');
+    clearSelection();
+    await fetchTasks();
+  } catch (err) {
+    showToast('❌ Error: ' + err.message, 'error');
+  }
+}
+
+// Expose to window
+window.toggleSelectAll = toggleSelectAll;
+window.handleBulkAction = handleBulkAction;
+window.clearSelection = clearSelection;
 
 // Expose functions to window for onclick handlers that are still in HTML (like modals/header)
 window.logout = logout;

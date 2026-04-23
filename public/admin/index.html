@@ -148,6 +148,10 @@
     <main class="list-panel">
       <div class="list-header">
         <div class="list-title-row">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="selectAllTasks" onchange="toggleSelectAll(this.checked)" />
+            <label for="selectAllTasks" style="margin-bottom: 0; font-size: 0.7rem; cursor: pointer;">Select All</label>
+          </div>
           <h2>All Tasks <span class="task-count-badge" id="taskCount">0</span></h2>
           <div class="list-controls">
             <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search tasks..." oninput="renderTasks()" />
@@ -166,6 +170,33 @@
           <div class="skel-card"></div>
           <div class="skel-card"></div>
           <div class="skel-card"></div>
+        </div>
+      </div>
+
+      <!-- BULK ACTION BAR -->
+      <div id="bulkActionBar" class="bulk-action-bar hidden">
+        <div class="bulk-info">
+          <span id="selectedCount">0</span> tasks selected
+        </div>
+        <div class="bulk-controls">
+          <div class="bulk-control-group">
+            <select id="bulkAssignedTo" class="bulk-select">
+              <option value="">Reassign to...</option>
+            </select>
+            <button class="bulk-apply-btn" onclick="handleBulkAction('reassign')">Reassign</button>
+          </div>
+          <div class="bulk-control-group">
+            <select id="bulkStatus" class="bulk-select">
+              <option value="">Change status...</option>
+              <option value="Not Started">Not Started</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Completed">Completed</option>
+              <option value="Blocked">Blocked</option>
+            </select>
+            <button class="bulk-apply-btn" onclick="handleBulkAction('status_change')">Update Status</button>
+          </div>
+          <button class="bulk-delete-btn" onclick="handleBulkAction('delete')">🗑️ Delete Selected</button>
+          <button class="bulk-cancel-btn" onclick="clearSelection()">Cancel</button>
         </div>
       </div>
     </main>
