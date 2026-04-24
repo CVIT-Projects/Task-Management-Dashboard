@@ -4,6 +4,8 @@ node_modules/
 .pnp.js
 # Testing
 coverage/
+test-results/
+playwright-report/
 # Production Build
 dist/
 dist-ssr/
