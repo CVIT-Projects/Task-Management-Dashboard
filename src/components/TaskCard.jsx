@@ -187,7 +187,7 @@ function TaskCard({ task }) {
   };
 
   return (
-    <div className={`task-row ${priority.className} ${overdue ? 'overdue' : ''} ${isDueSoon ? 'due-soon' : ''}`}>
+    <div id={`task-${task.id}`} className={`task-row ${priority.className} ${overdue ? 'overdue' : ''} ${isDueSoon ? 'due-soon' : ''}`}>
       <div className="col-id">
         <span className="task-id">#{task.id}</span>
       </div>

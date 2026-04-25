@@ -127,7 +127,13 @@ function Dashboard() {
   const [projectFilter, setProjectFilter] = useState('all');
   const [tagFilter, setTagFilter] = useState('all');
   const [viewType, setViewType] = useState(() => localStorage.getItem('dashboard_view') || 'table');
+  const [toast, setToast] = useState(null);
   const { token, user, logout } = useAuth();
+
+  const showToast = (message) => {
+    setToast(message);
+    setTimeout(() => setToast(null), 3000);
+  };
 
   const fetchProjects = useCallback(async () => {
     try {
@@ -199,6 +205,36 @@ function Dashboard() {
       return PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
     });
 
+  const handleNavigateToTask = useCallback((taskId) => {
+    const task = tasks.find(t => String(t.id || t._id) === String(taskId));
+    
+    if (!task) {
+      showToast('⚠️ Task not found or deleted');
+      return;
+    }
+
+    // Clear filters if the task is hidden
+    const isVisible = processedTasks.some(t => String(t.id || t._id) === String(taskId));
+    if (!isVisible) {
+      setSearchTerm('');
+      setPriorityFilter('All');
+      setTagFilter('all');
+      setProjectFilter('all');
+    }
+
+    // Wait for state updates/DOM re-render
+    setTimeout(() => {
+      const element = document.getElementById(`task-${taskId}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        element.classList.add('highlight-glow');
+        setTimeout(() => element.classList.remove('highlight-glow'), 2500);
+      } else {
+        showToast('⚠️ Task component not found on page');
+      }
+    }, 100);
+  }, [tasks, processedTasks]);
+
   return (
     <div className="app-wrapper">
       <Navbar
@@ -208,6 +244,7 @@ function Dashboard() {
         onPriorityChange={setPriorityFilter}
         lastUpdated={lastUpdated}
         taskCount={processedTasks.length}
+        onNavigateToTask={handleNavigateToTask}
       />
       <main className="main-content">
         {!loading && !error && user?.role === 'admin' && (
@@ -284,6 +321,7 @@ function Dashboard() {
           </>
         )}
       </main>
+      {toast && <div className="toast-notification">{toast}</div>}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import TimeEntry from '../models/TimeEntry.js';
+import Task from '../models/Task.js';
 import mongoose from 'mongoose';
 
 // @desc    Get summary report (totals by group)
@@ -210,6 +211,144 @@ export const getBillingSummary = async (req, res, next) => {
       nonBillableHours: nonBillableSeconds / 3600,
       totalEarned: totalEarned
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get per-user productivity report
+// @route   GET /api/reports/productivity
+// @access  Private/Admin
+export const getProductivityReport = async (req, res, next) => {
+  try {
+    const { from, to, userId } = req.query;
+    
+    const fromDate = from ? new Date(from) : new Date(0);
+    const toDate = to ? new Date(to) : new Date();
+    toDate.setHours(23, 59, 59, 999);
+
+    const matchFilter = {};
+    if (userId) {
+      matchFilter.user = new mongoose.Types.ObjectId(userId);
+    }
+
+    // 1. Aggregate Time Entries
+    const timeStats = await TimeEntry.aggregate([
+      {
+        $match: {
+          ...matchFilter,
+          startTime: { $gte: fromDate, $lte: toDate }
+        }
+      },
+      {
+        $group: {
+          _id: '$user',
+          totalSeconds: { $sum: '$duration' },
+          billableSeconds: { $sum: { $cond: ['$billable', '$duration', 0] } }
+        }
+      }
+    ]);
+
+    // 2. Aggregate Task Stats
+    const taskMatchFilter = {};
+    if (userId) {
+      taskMatchFilter.assignedTo = new mongoose.Types.ObjectId(userId);
+    }
+
+    const taskStats = await Task.aggregate([
+      {
+        $match: {
+          ...taskMatchFilter,
+          $or: [
+            { endTime: { $gte: fromDate, $lte: toDate } },
+            { deadline: { $gte: fromDate, $lte: toDate } }
+          ]
+        }
+      },
+      {
+        $group: {
+          _id: '$assignedTo',
+          tasksCompleted: {
+            $sum: {
+              $cond: [
+                { 
+                  $and: [
+                    { $eq: ['$status', 'Completed'] },
+                    { $gte: ['$endTime', fromDate] },
+                    { $lte: ['$endTime', toDate] }
+                  ]
+                },
+                1,
+                0
+              ]
+            }
+          },
+          onTimeCompleted: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: ['$status', 'Completed'] },
+                    { $gte: ['$endTime', fromDate] },
+                    { $lte: ['$endTime', toDate] },
+                    { $lte: ['$endTime', '$deadline'] }
+                  ]
+                },
+                1,
+                0
+              ]
+            }
+          },
+          tasksOverdue: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $ne: ['$status', 'Completed'] },
+                    { $gte: ['$deadline', fromDate] },
+                    { $lte: ['$deadline', toDate] },
+                    { $lt: ['$deadline', new Date()] }
+                  ]
+                },
+                1,
+                0
+              ]
+            }
+          }
+        }
+      }
+    ]);
+
+    // 3. Fetch all active users
+    const users = await mongoose.model('User').find(userId ? { _id: userId } : {}).select('name email');
+
+    // 4. Merge results
+    const report = users.map(user => {
+      const uId = user._id.toString();
+      const time = timeStats.find(t => t._id.toString() === uId) || { totalSeconds: 0, billableSeconds: 0 };
+      const task = taskStats.find(t => t._id.toString() === uId) || { tasksCompleted: 0, onTimeCompleted: 0, tasksOverdue: 0 };
+
+      const totalHours = time.totalSeconds / 3600;
+      const billableHours = time.billableSeconds / 3600;
+      const billablePercentage = totalHours > 0 ? (billableHours / totalHours) * 100 : 0;
+      const onTimeRate = task.tasksCompleted > 0 ? (task.onTimeCompleted / task.tasksCompleted) * 100 : 0;
+
+      return {
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email
+        },
+        totalHours: Math.round(totalHours * 100) / 100,
+        billableHours: Math.round(billableHours * 100) / 100,
+        billablePercentage: Math.round(billablePercentage * 10) / 10,
+        tasksCompleted: task.tasksCompleted,
+        tasksOverdue: task.tasksOverdue,
+        onTimeRate: Math.round(onTimeRate * 10) / 10
+      };
+    });
+
+    res.json(report);
   } catch (error) {
     next(error);
   }

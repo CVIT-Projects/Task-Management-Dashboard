@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import NotificationBell from './NotificationBell';
 import './Navbar.css';
 
-function Navbar({ searchTerm, onSearchChange, priorityFilter, onPriorityChange, lastUpdated, taskCount }) {
+function Navbar({ searchTerm, onSearchChange, priorityFilter, onPriorityChange, lastUpdated, taskCount, onNavigateToTask }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -82,7 +82,7 @@ function Navbar({ searchTerm, onSearchChange, priorityFilter, onPriorityChange, 
         {user?.role === 'admin' && (
           <a href="/admin/" className="admin-link-btn">⚙️ Admin Panel</a>
         )}
-        <NotificationBell />
+        <NotificationBell onNavigateToTask={onNavigateToTask} />
         <div className="user-section">
           <div className="user-avatar">{user?.name?.charAt(0)?.toUpperCase()}</div>
           <span className="user-name">{user?.name}</span>

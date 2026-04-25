@@ -29,7 +29,7 @@ function LiveTimer({ deadline }) {
   );
 }
 
-function NotificationDropdown({ notifications, onMarkAsRead, onClose }) {
+function NotificationDropdown({ notifications, onMarkAsRead, onNotificationClick, onClose }) {
   const getIcon = (type) => {
     switch (type) {
       case 'task_assigned': return '📌';
@@ -38,6 +38,16 @@ function NotificationDropdown({ notifications, onMarkAsRead, onClose }) {
       case 'timesheet_submitted': return '📩';
       case 'deadline_approaching': return '⏰';
       default: return '📢';
+    }
+  };
+
+  const handleItemClick = (notification) => {
+    if (notification.taskId) {
+      const taskId = typeof notification.taskId === 'object' ? (notification.taskId.id || notification.taskId._id) : notification.taskId;
+      if (taskId) onNotificationClick(taskId);
+    }
+    if (!notification.read) {
+      onMarkAsRead(notification.id);
     }
   };
 
@@ -55,7 +65,7 @@ function NotificationDropdown({ notifications, onMarkAsRead, onClose }) {
             <div 
               key={notification.id} 
               className={`notification-item ${notification.read ? 'read' : 'unread'}`} 
-              onClick={() => !notification.read && onMarkAsRead(notification.id)}
+              onClick={() => handleItemClick(notification)}
             >
               <div className="notification-icon">{getIcon(notification.type)}</div>
               <div className="notification-content">

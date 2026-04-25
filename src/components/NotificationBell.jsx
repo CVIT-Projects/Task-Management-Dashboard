@@ -6,7 +6,7 @@ import './Navbar.css';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
-function NotificationBell() {
+function NotificationBell({ onNavigateToTask }) {
   const [notifications, setNotifications] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -58,6 +58,11 @@ function NotificationBell() {
     }
   };
 
+  const handleNotificationClick = (taskId) => {
+    setShowDropdown(false);
+    if (onNavigateToTask) onNavigateToTask(taskId);
+  };
+
   return (
     <div className="notification-bell-container" ref={dropdownRef}>
       <button className="bell-btn" onClick={toggleDropdown} title="Notifications">
@@ -69,6 +74,7 @@ function NotificationBell() {
         <NotificationDropdown 
           notifications={notifications} 
           onMarkAsRead={handleMarkAsRead}
+          onNotificationClick={handleNotificationClick}
           onClose={() => setShowDropdown(false)}
         />
       )}

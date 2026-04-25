@@ -84,7 +84,7 @@ function KanbanCard({ task, onStatusChange }) {
   };
 
   return (
-    <div className={`kanban-card ${priority.className} ${overdue && localStatus !== 'Completed' ? 'overdue' : ''} ${isDueSoon && localStatus !== 'Completed' ? 'due-soon' : ''}`}>
+    <div id={`task-${task.id}`} className={`kanban-card ${priority.className} ${overdue && localStatus !== 'Completed' ? 'overdue' : ''} ${isDueSoon && localStatus !== 'Completed' ? 'due-soon' : ''}`}>
       <div className="kanban-card-header">
         {task.project && (
           <span className="kanban-project-badge" style={{ background: task.project.color }}>
