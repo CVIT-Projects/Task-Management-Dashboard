@@ -1,10 +1,5 @@
 import express from 'express';
-import { 
-  getSummaryReport, 
-  getDetailedReport, 
-  getBillingSummary,
-  getProductivityReport 
-} from '../controllers/reportController.js';
+import { getSummaryReport, getDetailedReport, getBillingSummary, getProductivityReport } from '../controllers/reportController.js';
 import { verifyToken, requireAdmin } from '../middleware/auth.js';
 
 const router = express.Router();

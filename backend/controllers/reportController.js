@@ -1,5 +1,6 @@
 import TimeEntry from '../models/TimeEntry.js';
 import Task from '../models/Task.js';
+import User from '../models/User.js';
 import mongoose from 'mongoose';
 
 // @desc    Get summary report (totals by group)
@@ -222,24 +223,31 @@ export const getBillingSummary = async (req, res, next) => {
 export const getProductivityReport = async (req, res, next) => {
   try {
     const { from, to, userId } = req.query;
-    
-    const fromDate = from ? new Date(from) : new Date(0);
-    const toDate = to ? new Date(to) : new Date();
-    toDate.setHours(23, 59, 59, 999);
 
-    const matchFilter = {};
+    // Filters
+    const timeFilter = {};
+    const taskFilter = {};
+
     if (userId) {
-      matchFilter.user = new mongoose.Types.ObjectId(userId);
+      timeFilter.user = new mongoose.Types.ObjectId(userId);
+      taskFilter.assignedTo = new mongoose.Types.ObjectId(userId);
     }
 
-    // 1. Aggregate Time Entries
+    if (from || to) {
+      timeFilter.startTime = {};
+      // For tasks, we filter by endTime (completion date) for completed stats,
+      // but "overdue" is based on deadline.
+      if (from) timeFilter.startTime.$gte = new Date(from);
+      if (to) {
+        const toDate = new Date(to);
+        toDate.setHours(23, 59, 59, 999);
+        timeFilter.startTime.$lte = toDate;
+      }
+    }
+
+    // 1. Get Time Stats
     const timeStats = await TimeEntry.aggregate([
-      {
-        $match: {
-          ...matchFilter,
-          startTime: { $gte: fromDate, $lte: toDate }
-        }
-      },
+      { $match: timeFilter },
       {
         $group: {
           _id: '$user',
@@ -249,64 +257,37 @@ export const getProductivityReport = async (req, res, next) => {
       }
     ]);
 
-    // 2. Aggregate Task Stats
-    const taskMatchFilter = {};
-    if (userId) {
-      taskMatchFilter.assignedTo = new mongoose.Types.ObjectId(userId);
-    }
-
-    const taskStats = await Task.aggregate([
-      {
-        $match: {
-          ...taskMatchFilter,
-          $or: [
-            { endTime: { $gte: fromDate, $lte: toDate } },
-            { deadline: { $gte: fromDate, $lte: toDate } }
-          ]
-        }
-      },
+    // 2. Get Task Stats
+    // We need to look at tasks that were either completed in the period 
+    // OR are currently overdue.
+    const taskPipeline = [
+      { $match: taskFilter },
       {
         $group: {
           _id: '$assignedTo',
-          tasksCompleted: {
-            $sum: {
+          completedCount: { 
+            $sum: { $cond: [{ $eq: ['$status', 'Completed'] }, 1, 0] } 
+          },
+          onTimeCount: { 
+            $sum: { 
               $cond: [
                 { 
                   $and: [
                     { $eq: ['$status', 'Completed'] },
-                    { $gte: ['$endTime', fromDate] },
-                    { $lte: ['$endTime', toDate] }
-                  ]
-                },
-                1,
-                0
-              ]
-            }
-          },
-          onTimeCompleted: {
-            $sum: {
-              $cond: [
-                {
-                  $and: [
-                    { $eq: ['$status', 'Completed'] },
-                    { $gte: ['$endTime', fromDate] },
-                    { $lte: ['$endTime', toDate] },
                     { $lte: ['$endTime', '$deadline'] }
-                  ]
-                },
-                1,
+                  ] 
+                }, 
+                1, 
                 0
-              ]
-            }
+              ] 
+            } 
           },
-          tasksOverdue: {
+          overdueCount: {
             $sum: {
               $cond: [
                 {
                   $and: [
                     { $ne: ['$status', 'Completed'] },
-                    { $gte: ['$deadline', fromDate] },
-                    { $lte: ['$deadline', toDate] },
                     { $lt: ['$deadline', new Date()] }
                   ]
                 },
@@ -317,34 +298,118 @@ export const getProductivityReport = async (req, res, next) => {
           }
         }
       }
-    ]);
+    ];
+    
+    // If date range is provided, we only count tasks COMPLETED in that range for the "completed" stat?
+    // Usually, productivity reports are about output in a period.
+    if (from || to) {
+      // Re-evaluate task stats for the period
+      // completedCount: endTime within period
+      // onTimeCount: endTime within period AND endTime <= deadline
+      // overdueCount: deadline within period AND status !== Completed OR endTime > deadline?
+      // Let's simplify: 
+      // Tasks Completed in period: status=Completed AND endTime in range
+      // Tasks Overdue: (status!=Completed AND deadline < toDate) OR (status=Completed AND endTime > deadline AND endTime in range)
+      
+      const rangeStart = from ? new Date(from) : new Date(0);
+      const rangeEnd = to ? new Date(to) : new Date();
+      rangeEnd.setHours(23, 59, 59, 999);
 
-    // 3. Fetch all active users
-    const users = await mongoose.model('User').find(userId ? { _id: userId } : {}).select('name email');
+      taskPipeline[0].$match.$or = [
+        { endTime: { $gte: rangeStart, $lte: rangeEnd } },
+        { deadline: { $gte: rangeStart, $lte: rangeEnd }, status: { $ne: 'Completed' } }
+      ];
+      
+      // Update group conditions to be range-aware
+      taskPipeline[1].$group.completedCount = {
+        $sum: { 
+          $cond: [
+            { 
+              $and: [
+                { $eq: ['$status', 'Completed'] },
+                { $gte: ['$endTime', rangeStart] },
+                { $lte: ['$endTime', rangeEnd] }
+              ] 
+            }, 
+            1, 
+            0
+          ] 
+        }
+      };
+      
+      taskPipeline[1].$group.onTimeCount = {
+        $sum: { 
+          $cond: [
+            { 
+              $and: [
+                { $eq: ['$status', 'Completed'] },
+                { $gte: ['$endTime', rangeStart] },
+                { $lte: ['$endTime', rangeEnd] },
+                { $lte: ['$endTime', '$deadline'] }
+              ] 
+            }, 
+            1, 
+            0
+          ] 
+        }
+      };
 
-    // 4. Merge results
+      taskPipeline[1].$group.overdueCount = {
+        $sum: {
+          $cond: [
+            {
+              $or: [
+                // Still incomplete and deadline passed (within range or before range end)
+                {
+                  $and: [
+                    { $ne: ['$status', 'Completed'] },
+                    { $lt: ['$deadline', rangeEnd] }
+                  ]
+                },
+                // Completed but missed deadline (completed within range)
+                {
+                  $and: [
+                    { $eq: ['$status', 'Completed'] },
+                    { $gt: ['$endTime', '$deadline'] },
+                    { $gte: ['$endTime', rangeStart] },
+                    { $lte: ['$endTime', rangeEnd] }
+                  ]
+                }
+              ]
+            },
+            1,
+            0
+          ]
+        }
+      };
+    }
+
+    const taskStats = await Task.aggregate(taskPipeline);
+
+    // 3. Get all users to ensure everyone is listed (if admin viewing team)
+    const userQuery = userId ? { _id: userId } : {};
+    const users = await User.find(userQuery, 'name email');
+
+    // 4. Combine
     const report = users.map(user => {
-      const uId = user._id.toString();
-      const time = timeStats.find(t => t._id.toString() === uId) || { totalSeconds: 0, billableSeconds: 0 };
-      const task = taskStats.find(t => t._id.toString() === uId) || { tasksCompleted: 0, onTimeCompleted: 0, tasksOverdue: 0 };
+      const tStat = timeStats.find(s => String(s._id) === String(user._id)) || { totalSeconds: 0, billableSeconds: 0 };
+      const kStat = taskStats.find(s => String(s._id) === String(user._id)) || { completedCount: 0, onTimeCount: 0, overdueCount: 0 };
 
-      const totalHours = time.totalSeconds / 3600;
-      const billableHours = time.billableSeconds / 3600;
-      const billablePercentage = totalHours > 0 ? (billableHours / totalHours) * 100 : 0;
-      const onTimeRate = task.tasksCompleted > 0 ? (task.onTimeCompleted / task.tasksCompleted) * 100 : 0;
+      const totalHours = tStat.totalSeconds / 3600;
+      const billableHours = tStat.billableSeconds / 3600;
+      const billablePercent = totalHours > 0 ? (billableHours / totalHours) * 100 : 0;
+      const onTimeRate = kStat.completedCount > 0 ? (kStat.onTimeCount / kStat.completedCount) * 100 : 0;
 
       return {
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email
-        },
-        totalHours: Math.round(totalHours * 100) / 100,
-        billableHours: Math.round(billableHours * 100) / 100,
-        billablePercentage: Math.round(billablePercentage * 10) / 10,
-        tasksCompleted: task.tasksCompleted,
-        tasksOverdue: task.tasksOverdue,
-        onTimeRate: Math.round(onTimeRate * 10) / 10
+        userId: user._id,
+        name: user.name,
+        email: user.email,
+        totalHours,
+        billableHours,
+        billablePercent,
+        tasksCompleted: kStat.completedCount,
+        tasksOverdue: kStat.overdueCount,
+        onTimeRate
       };
     });
 

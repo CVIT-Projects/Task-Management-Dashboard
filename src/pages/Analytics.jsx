@@ -43,12 +43,9 @@ export default function Analytics() {
   const [detailed, setDetailed] = useState([]);
   const [billing, setBilling] = useState({ totalEarned: 0, billableHours: 0 });
   const [projects, setProjects] = useState([]);
-  const [loading, setLoading] = useState(true);
-  
-  // Productivity Report Data
-  const [activeTab, setActiveTab] = useState('overview'); // 'overview' or 'productivity'
   const [productivity, setProductivity] = useState([]);
-  const [prodLoading, setProdLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('analytics'); // 'analytics' or 'productivity'
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Fetch projects for filter
@@ -71,6 +68,12 @@ export default function Analytics() {
         setSummary(sumRes.data);
         setDetailed(detRes.data);
         setBilling(billRes.data);
+
+        // Fetch productivity if admin
+        if (user?.role === 'admin') {
+          const prodRes = await axios.get(`${API_BASE}/api/reports/productivity?${query}`, { headers: { Authorization: `Bearer ${token}` } });
+          setProductivity(prodRes.data);
+        }
       } catch (err) {
         console.error('Failed to load report', err);
       } finally {
@@ -78,26 +81,7 @@ export default function Analytics() {
       }
     };
     if (token) fetchData();
-  }, [startDate, endDate, groupBy, selectedProjectId, token]);
-
-  useEffect(() => {
-    const fetchProductivity = async () => {
-      if (activeTab !== 'productivity') return;
-      setProdLoading(true);
-      try {
-        const query = `from=${formatISO(startDate)}&to=${formatISO(endDate)}`;
-        const res = await axios.get(`${API_BASE}/api/reports/productivity?${query}`, { 
-          headers: { Authorization: `Bearer ${token}` } 
-        });
-        setProductivity(res.data);
-      } catch (err) {
-        console.error('Failed to load productivity report', err);
-      } finally {
-        setProdLoading(false);
-      }
-    };
-    if (token && user?.role === 'admin') fetchProductivity();
-  }, [startDate, endDate, activeTab, token, user]);
+  }, [startDate, endDate, groupBy, selectedProjectId, token, user]);
 
   const totalHours = useMemo(() => {
     const sec = summary.reduce((acc, curr) => acc + curr.totalSeconds, 0);
@@ -132,15 +116,16 @@ export default function Analytics() {
   };
 
   const exportProductivityCSV = () => {
-    const headers = ['User', 'Total Hours', 'Billable Hours', 'Billable %', 'Tasks Completed', 'Tasks Overdue', 'On-Time Rate %'];
-    const rows = productivity.map(p => [
-      p.user.name,
-      p.totalHours.toFixed(2),
-      p.billableHours.toFixed(2),
-      p.billablePercentage.toFixed(1) + '%',
-      p.tasksCompleted,
-      p.tasksOverdue,
-      p.onTimeRate.toFixed(1) + '%'
+    const headers = ['User', 'Email', 'Total Hours', 'Billable Hours', 'Billable %', 'Tasks Completed', 'Tasks Overdue', 'On-Time Rate %'];
+    const rows = productivity.map(u => [
+      u.name,
+      u.email,
+      u.totalHours.toFixed(2),
+      u.billableHours.toFixed(2),
+      u.billablePercent.toFixed(1),
+      u.tasksCompleted,
+      u.tasksOverdue,
+      u.onTimeRate.toFixed(1)
     ]);
 
     const csvContent = "data:text/csv;charset=utf-8," 
@@ -186,6 +171,25 @@ export default function Analytics() {
               <p>Analyze productivity and tracked hours across your team</p>
             </div>
 
+            {user?.role === 'admin' && (
+              <div className="tab-switcher">
+                <button 
+                  className={`tab-btn ${activeTab === 'analytics' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('analytics')}
+                >
+                  <BarChart3 size={18} />
+                  Analytics
+                </button>
+                <button 
+                  className={`tab-btn ${activeTab === 'productivity' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('productivity')}
+                >
+                  <TrendingUp size={18} />
+                  Productivity
+                </button>
+              </div>
+            )}
+
             <div className="controls-group">
               <div className="filter-item">
                 <label>Date Range</label>
@@ -226,26 +230,7 @@ export default function Analytics() {
             </div>
           </div>
 
-          {user?.role === 'admin' && (
-            <div className="analytics-tabs">
-              <button 
-                className={`tab-btn ${activeTab === 'overview' ? 'active' : ''}`}
-                onClick={() => setActiveTab('overview')}
-              >
-                <TrendingUp size={18} />
-                Overview
-              </button>
-              <button 
-                className={`tab-btn ${activeTab === 'productivity' ? 'active' : ''}`}
-                onClick={() => setActiveTab('productivity')}
-              >
-                <Clock size={18} />
-                Team Productivity
-              </button>
-            </div>
-          )}
-
-          {activeTab === 'overview' ? (
+          {activeTab === 'analytics' ? (
             <>
               <div className="summary-stats">
                 <div className="stat-box">
@@ -350,10 +335,7 @@ export default function Analytics() {
           ) : (
             <section className="report-table-section">
               <div className="table-header-row">
-                <div className="section-title">
-                  <h3>Team Productivity Report</h3>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Summary of effort and completion rates per user</p>
-                </div>
+                <h3>Team Productivity Report</h3>
                 <button className="export-btn" onClick={exportProductivityCSV}>
                   <Download size={18} />
                   Export CSV
@@ -367,38 +349,38 @@ export default function Analytics() {
                       <th>Total Hours</th>
                       <th>Billable Hours</th>
                       <th>Billable %</th>
-                      <th>Tasks Completed</th>
-                      <th>Tasks Overdue</th>
+                      <th>Completed</th>
+                      <th>Overdue</th>
                       <th>On-Time Rate</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {prodLoading ? (
+                    {loading ? (
                       <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px' }}><LoadingSpinner /></td></tr>
                     ) : productivity.length === 0 ? (
-                      <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>No productivity data for this range.</td></tr>
-                    ) : productivity.map((p, idx) => (
-                      <tr key={idx}>
-                        <td style={{ fontWeight: 600 }}>{p.user.name}</td>
-                        <td>{p.totalHours.toFixed(2)}h</td>
-                        <td>{p.billableHours.toFixed(2)}h</td>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ minWidth: '40px' }}>{Math.round(p.billablePercentage)}%</span>
-                            <div style={{ width: '60px', height: '6px', background: 'var(--border)', borderRadius: '3px' }}>
-                              <div style={{ width: `${p.billablePercentage}%`, height: '100%', background: 'var(--success)', borderRadius: '3px' }}></div>
-                            </div>
-                          </div>
+                      <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>No productivity data available.</td></tr>
+                    ) : productivity.map((u, idx) => (
+                      <tr key={u.userId || idx}>
+                        <td style={{ fontWeight: '600' }}>
+                          <div>{u.name}</div>
+                          <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', fontWeight: 'normal' }}>{u.email}</div>
                         </td>
-                        <td>{p.tasksCompleted}</td>
-                        <td style={{ color: p.tasksOverdue > 0 ? 'var(--danger)' : 'inherit' }}>{p.tasksOverdue}</td>
+                        <td>{u.totalHours.toFixed(1)}h</td>
+                        <td>{u.billableHours.toFixed(1)}h</td>
                         <td>
-                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ minWidth: '40px' }}>{Math.round(p.onTimeRate)}%</span>
-                            <div style={{ width: '60px', height: '6px', background: 'var(--border)', borderRadius: '3px' }}>
-                              <div style={{ width: `${p.onTimeRate}%`, height: '100%', background: 'var(--accent)', borderRadius: '3px' }}></div>
-                            </div>
+                          <div className="progress-mini">
+                            <div className="progress-bar-mini" style={{ width: `${u.billablePercent}%`, background: 'var(--success)' }}></div>
                           </div>
+                          {u.billablePercent.toFixed(0)}%
+                        </td>
+                        <td>{u.tasksCompleted}</td>
+                        <td style={{ color: u.tasksOverdue > 0 ? 'var(--error)' : 'inherit' }}>{u.tasksOverdue}</td>
+                        <td>
+                           <span style={{ 
+                             color: u.onTimeRate > 80 ? 'var(--success)' : u.onTimeRate > 50 ? 'var(--warning)' : 'var(--error)'
+                           }}>
+                             {u.onTimeRate.toFixed(0)}%
+                           </span>
                         </td>
                       </tr>
                     ))}
