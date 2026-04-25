@@ -44,6 +44,7 @@ export default function Analytics() {
   const [billing, setBilling] = useState({ totalEarned: 0, billableHours: 0 });
   const [projects, setProjects] = useState([]);
   const [productivity, setProductivity] = useState([]);
+  const [budgetData, setBudgetData] = useState(null);
   const [activeTab, setActiveTab] = useState('analytics'); // 'analytics' or 'productivity'
   const [loading, setLoading] = useState(true);
 
@@ -82,6 +83,25 @@ export default function Analytics() {
     };
     if (token) fetchData();
   }, [startDate, endDate, groupBy, selectedProjectId, token, user]);
+
+  useEffect(() => {
+    const fetchBudget = async () => {
+      if (!selectedProjectId || user?.role !== 'admin') {
+        setBudgetData(null);
+        return;
+      }
+      try {
+        const res = await axios.get(`${API_BASE}/api/projects/${selectedProjectId}/budget`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setBudgetData(res.data);
+      } catch (err) {
+        console.error('Failed to fetch budget', err);
+        setBudgetData(null);
+      }
+    };
+    fetchBudget();
+  }, [selectedProjectId, token, user]);
 
   const totalHours = useMemo(() => {
     const sec = summary.reduce((acc, curr) => acc + curr.totalSeconds, 0);
@@ -248,6 +268,69 @@ export default function Analytics() {
                   </div>
                 </div>
               </div>
+
+              {budgetData && (
+                <div className="budget-widget-card" style={{ 
+                  background: 'var(--bg-secondary)', 
+                  border: '1px solid var(--border)', 
+                  borderRadius: '16px', 
+                  padding: '24px', 
+                  marginBottom: '24px' 
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+                    <TrendingUp size={24} color="var(--accent)" />
+                    <h3 style={{ margin: 0, fontSize: '1.2rem' }}>Project Budget Tracking: {budgetData.project.name}</h3>
+                  </div>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+                    {/* Hours Budget */}
+                    {budgetData.project.budgetHours > 0 && (
+                      <div className="budget-item">
+                        <div style={{ display: 'flex', justifySelf: 'space-between', justifyContent: 'space-between', marginBottom: '8px' }}>
+                          <span style={{ color: 'var(--text-muted)' }}>Hours Consumption</span>
+                          <span style={{ fontWeight: '600', color: budgetData.hoursPercent >= 100 ? 'var(--error)' : budgetData.hoursPercent >= 80 ? 'var(--warning)' : 'var(--success)' }}>
+                            {budgetData.actualHours.toFixed(1)} / {budgetData.project.budgetHours}h ({budgetData.hoursPercent.toFixed(0)}%)
+                          </span>
+                        </div>
+                        <div style={{ height: '10px', background: 'var(--bg-hover)', borderRadius: '5px', overflow: 'hidden' }}>
+                          <div style={{ 
+                            height: '100%', 
+                            width: `${Math.min(100, budgetData.hoursPercent)}%`, 
+                            background: budgetData.hoursPercent >= 100 ? 'var(--error)' : budgetData.hoursPercent >= 80 ? 'var(--warning)' : 'var(--accent)',
+                            transition: 'width 0.5s ease'
+                          }}></div>
+                        </div>
+                        {budgetData.hoursPercent >= 100 && (
+                          <div style={{ color: 'var(--error)', fontSize: '0.8rem', marginTop: '4px' }}>⚠️ Over budget by {(budgetData.actualHours - budgetData.project.budgetHours).toFixed(1)}h</div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Money Budget */}
+                    {budgetData.project.budgetAmount > 0 && (
+                      <div className="budget-item">
+                        <div style={{ display: 'flex', justifySelf: 'space-between', justifyContent: 'space-between', marginBottom: '8px' }}>
+                          <span style={{ color: 'var(--text-muted)' }}>Budget Consumption ($)</span>
+                          <span style={{ fontWeight: '600', color: budgetData.amountPercent >= 100 ? 'var(--error)' : budgetData.amountPercent >= 80 ? 'var(--warning)' : 'var(--success)' }}>
+                            ${budgetData.actualAmount.toLocaleString()} / ${budgetData.project.budgetAmount.toLocaleString()} ({budgetData.amountPercent.toFixed(0)}%)
+                          </span>
+                        </div>
+                        <div style={{ height: '10px', background: 'var(--bg-hover)', borderRadius: '5px', overflow: 'hidden' }}>
+                          <div style={{ 
+                            height: '100%', 
+                            width: `${Math.min(100, budgetData.amountPercent)}%`, 
+                            background: budgetData.amountPercent >= 100 ? 'var(--error)' : budgetData.amountPercent >= 80 ? 'var(--warning)' : 'var(--accent)',
+                            transition: 'width 0.5s ease'
+                          }}></div>
+                        </div>
+                        {budgetData.amountPercent >= 100 && (
+                          <div style={{ color: 'var(--error)', fontSize: '0.8rem', marginTop: '4px' }}>⚠️ Over budget by ${(budgetData.actualAmount - budgetData.project.budgetAmount).toLocaleString()}</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <div className="charts-grid">
                 <div className="chart-card">

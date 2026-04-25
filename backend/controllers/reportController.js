@@ -392,8 +392,8 @@ export const getProductivityReport = async (req, res, next) => {
 
     // 4. Combine
     const report = users.map(user => {
-      const tStat = timeStats.find(s => String(s._id) === String(user._id)) || { totalSeconds: 0, billableSeconds: 0 };
-      const kStat = taskStats.find(s => String(s._id) === String(user._id)) || { completedCount: 0, onTimeCount: 0, overdueCount: 0 };
+      const tStat = timeStats.find(s => s._id && String(s._id) === String(user._id)) || { totalSeconds: 0, billableSeconds: 0 };
+      const kStat = taskStats.find(s => s._id && String(s._id) === String(user._id)) || { completedCount: 0, onTimeCount: 0, overdueCount: 0 };
 
       const totalHours = tStat.totalSeconds / 3600;
       const billableHours = tStat.billableSeconds / 3600;

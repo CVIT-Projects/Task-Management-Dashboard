@@ -53,7 +53,9 @@ async function handleSubmit(e) {
     name: document.getElementById('name').value.trim(),
     color: document.getElementById('color').value,
     status: document.getElementById('status').value,
-    description: document.getElementById('description').value.trim()
+    description: document.getElementById('description').value.trim(),
+    budgetHours: Number(document.getElementById('budgetHours').value) || 0,
+    budgetAmount: Number(document.getElementById('budgetAmount').value) || 0
   };
 
   try {
@@ -95,9 +97,53 @@ function renderProjects() {
         </div>
       </div>
       <div style="margin-top:10px; color:#c9d1d9; font-size:0.9rem">${escapeHtml(p.description) || '<i>No description provided.</i>'}</div>
+      
+      ${renderBudgetBars(p)}
+      
       <div style="margin-top:10px; font-size:0.8rem; display: inline-block; padding: 2px 8px; border-radius: 12px; background: rgba(255,255,255,0.1);">Status: ${p.status}</div>
     </div>
   `).join('');
+}
+
+function renderBudgetBars(p) {
+  if (!p.budgetHours && !p.budgetAmount) return '';
+  
+  let html = '<div style="margin-top:15px; border-top: 1px solid var(--border); padding-top: 12px;">';
+  
+  if (p.budgetHours > 0) {
+    const percent = Math.min(100, (p.actualHours / p.budgetHours) * 100);
+    const color = percent >= 100 ? 'var(--error)' : percent >= 80 ? 'var(--warning)' : 'var(--accent)';
+    html += `
+      <div style="margin-bottom: 10px;">
+        <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted); margin-bottom:4px;">
+          <span>Hours: ${p.actualHours.toFixed(1)} / ${p.budgetHours}h</span>
+          <span style="color:${color}">${percent.toFixed(0)}%</span>
+        </div>
+        <div style="height:6px; background:rgba(255,255,255,0.1); border-radius:3px; overflow:hidden;">
+          <div style="height:100%; width:${percent}%; background:${color}; border-radius:3px;"></div>
+        </div>
+      </div>
+    `;
+  }
+  
+  if (p.budgetAmount > 0) {
+    const percent = Math.min(100, (p.actualAmount / p.budgetAmount) * 100);
+    const color = percent >= 100 ? 'var(--error)' : percent >= 80 ? 'var(--warning)' : 'var(--accent)';
+    html += `
+      <div>
+        <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted); margin-bottom:4px;">
+          <span>Budget: $${(p.actualAmount || 0).toLocaleString()} / $${p.budgetAmount.toLocaleString()}</span>
+          <span style="color:${color}">${percent.toFixed(0)}%</span>
+        </div>
+        <div style="height:6px; background:rgba(255,255,255,0.1); border-radius:3px; overflow:hidden;">
+          <div style="height:100%; width:${percent}%; background:${color}; border-radius:3px;"></div>
+        </div>
+      </div>
+    `;
+  }
+  
+  html += '</div>';
+  return html;
 }
 
 function startEdit(id) {
@@ -113,6 +159,8 @@ function startEdit(id) {
   document.getElementById('color').value = p.color;
   document.getElementById('status').value = p.status;
   document.getElementById('description').value = p.description;
+  document.getElementById('budgetHours').value = p.budgetHours || '';
+  document.getElementById('budgetAmount').value = p.budgetAmount || '';
 }
 
 function cancelEdit() { resetForm(); }

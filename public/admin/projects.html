@@ -64,6 +64,17 @@
           <label for="description">Detailed Description</label>
           <textarea id="description" placeholder="Project details, objectives, or scopes..." rows="4"></textarea>
         </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div class="form-group">
+            <label for="budgetHours">Budget (Hours)</label>
+            <input type="number" id="budgetHours" placeholder="0" min="0" step="0.1" />
+          </div>
+          <div class="form-group">
+            <label for="budgetAmount">Budget (Amount $)</label>
+            <input type="number" id="budgetAmount" placeholder="0" min="0" />
+          </div>
+        </div>
 
         <button type="submit" class="submit-btn" id="submitBtn">
           <span>➕ Add Project</span>
