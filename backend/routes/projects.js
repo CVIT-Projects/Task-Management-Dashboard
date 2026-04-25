@@ -4,7 +4,8 @@ import {
   createProject,
   updateProject,
   deleteProject,
-  getProjectTasks
+  getProjectTasks,
+  getProjectBudget
 } from '../controllers/projectController.js';
 import { verifyToken, requireAdmin } from '../middleware/auth.js';
 
@@ -17,6 +18,9 @@ router.route('/')
 router.route('/:id')
   .put(verifyToken, requireAdmin, updateProject)
   .delete(verifyToken, requireAdmin, deleteProject);
+
+router.route('/:id/budget')
+  .get(verifyToken, requireAdmin, getProjectBudget);
 
 router.route('/:id/tasks')
   .get(verifyToken, getProjectTasks);

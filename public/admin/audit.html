@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Audit Logs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="admin.css" />
+  <style>
+    .audit-table { width: 100%; border-collapse: collapse; margin-top: 20px; background: var(--bg-secondary); border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
+    .audit-table th, .audit-table td { padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+    .audit-table th { background: rgba(255,255,255,0.03); color: var(--text-muted); font-weight: 600; }
+    .audit-table tr:last-child td { border-bottom: none; }
+    .action-badge { padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+    .badge-create { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+    .badge-update { background: rgba(99, 102, 241, 0.1); color: #6366f1; }
+    .badge-delete { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+    .badge-audit { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+    .details-json { font-family: monospace; font-size: 0.8rem; color: var(--text-muted); white-space: pre-wrap; word-break: break-all; max-width: 300px; display: block; }
+    .pagination { display: flex; justify-content: center; align-items: center; gap: 16px; margin-top: 30px; }
+    .page-btn { padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); cursor: pointer; transition: all 0.2s; }
+    .page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .page-btn:hover:not(:disabled) { background: var(--bg-hover); }
+    .filter-bar { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; background: var(--bg-secondary); padding: 20px; border-radius: 12px; border: 1px solid var(--border); }
+  </style>
+</head>
+<body>
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-brand">
+      <span class="brand-icon">📜</span>
+      <div>
+        <h1>Admin Audit Logs</h1>
+        <span class="brand-badge" style="background: var(--warning)">Compliance View</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <a href="/admin/index.html" class="view-dashboard-btn" style="background: #30363d; color: #fff; border:none; margin-right: 10px;">
+        ⚙️ Tasks
+      </a>
+      <a href="/admin/projects.html" class="view-dashboard-btn" style="background: #1f6feb; color: #fff; border:none; margin-right: 10px;">
+        📁 Projects
+      </a>
+      <a href="/admin/users.html" class="view-dashboard-btn" style="background: #8250df; color: #fff; border:none; margin-right: 10px;">
+        👥 Users
+      </a>
+      <a href="/" target="_blank" class="view-dashboard-btn">
+        📋 View Dashboard
+      </a>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <div class="layout" style="display: block; padding: 20px 40px;">
+    
+    <div class="filter-bar">
+      <div class="form-group" style="margin:0; min-width: 150px;">
+        <label>Action & Type</label>
+        <select id="filterAction" onchange="fetchLogs(1)">
+          <option value="">All Actions</option>
+          <option value="CREATE_TASK">Create Task</option>
+          <option value="UPDATE_TASK">Update Task</option>
+          <option value="DELETE_TASK">Delete Task</option>
+          <option value="BULK_REASSIGN_TASKS">Bulk Reassign</option>
+          <option value="BULK_DELETE_TASKS">Bulk Delete</option>
+          <option value="CREATE_PROJECT">Create Project</option>
+          <option value="DELETE_PROJECT">Delete Project</option>
+          <option value="APPROVE_TIMESHEET">Approve Timesheet</option>
+          <option value="REJECT_TIMESHEET">Reject Timesheet</option>
+          <option value="UPDATE_USER_RATE">Update Rate</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin:0; min-width: 150px;">
+        <label>From Date</label>
+        <input type="date" id="filterFrom" onchange="fetchLogs(1)" />
+      </div>
+      <div class="form-group" style="margin:0; min-width: 150px;">
+        <label>To Date</label>
+        <input type="date" id="filterTo" onchange="fetchLogs(1)" />
+      </div>
+      <div style="flex-grow: 1;"></div>
+      <div style="align-self: flex-end;">
+        <button class="submit-btn" style="margin:0; width: auto; padding: 10px 24px;" onclick="clearFilters()">Clear Filters</button>
+      </div>
+    </div>
+
+    <main class="list-panel" style="width: 100%; max-width: none;">
+      <div style="overflow-x: auto;">
+        <table class="audit-table">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Admin</th>
+              <th>Action</th>
+              <th>Target Model</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody id="auditList">
+            <!-- Content will be populated by audit.js -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pagination">
+        <button id="prevBtn" class="page-btn" onclick="changePage(-1)">← Previous</button>
+        <span id="pageInfo">Page 1 of 1</span>
+        <button id="nextBtn" class="page-btn" onclick="changePage(1)">Next →</button>
+      </div>
+    </main>
+  </div>
+
+  <div class="toast hidden" id="toast">
+    <span id="toastMessage"></span>
+  </div>
+
+  <script src="audit.js"></script>
+</body>
+</html>

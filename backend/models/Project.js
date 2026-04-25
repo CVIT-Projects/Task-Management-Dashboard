@@ -23,6 +23,14 @@ const projectSchema = new mongoose.Schema({
     enum: ['Active', 'Archived'],
     default: 'Active'
   },
+  budgetHours: {
+    type: Number,
+    default: 0
+  },
+  budgetAmount: {
+    type: Number,
+    default: 0
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'

@@ -128,7 +128,13 @@ function Dashboard() {
   const [tagFilter, setTagFilter] = useState('all');
   const [viewType, setViewType] = useState(() => localStorage.getItem('dashboard_view') || 'table');
   const [highlightedTaskId, setHighlightedTaskId] = useState(null);
+  const [toast, setToast] = useState(null);
   const { token, user, logout } = useAuth();
+
+  const showToast = (message) => {
+    setToast(message);
+    setTimeout(() => setToast(null), 3000);
+  };
 
   const fetchProjects = useCallback(async () => {
     try {
@@ -185,15 +191,14 @@ function Dashboard() {
     if (!taskId) return;
     
     // 1. Check if task exists in our loaded set
-    const taskExists = tasks.some(t => String(t.id) === String(taskId));
+    const task = tasks.find(t => String(t.id || t._id) === String(taskId));
     
-    if (!taskExists) {
-      alert("Task not found. It may have been deleted or you don't have access.");
+    if (!task) {
+      showToast("⚠️ Task not found or deleted");
       return;
     }
 
     // 2. Scroll to the task element
-    // Small delay to ensure component is rendered
     setTimeout(() => {
       let element = document.getElementById(`task-${taskId}`);
       
@@ -212,12 +217,12 @@ function Dashboard() {
             setHighlightedTaskId(taskId);
             setTimeout(() => setHighlightedTaskId(null), 3000);
           } else {
-            alert("Task could not be located even after clearing filters. Try switching Dashboard views.");
+            showToast("⚠️ Task hidden by current view filters");
           }
         }, 200);
       } else {
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        // 3. Apply highlight
+        // 3. Apply highlight via state
         setHighlightedTaskId(taskId);
         setTimeout(() => setHighlightedTaskId(null), 3000);
       }
@@ -234,7 +239,6 @@ function Dashboard() {
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, [loading, tasks.length, handleNavigateToTask]);
-
   const processedTasks = tasks
     .filter((task) => {
       const term = searchTerm.toLowerCase();
@@ -340,6 +344,7 @@ function Dashboard() {
           </>
         )}
       </main>
+      {toast && <div className="toast-notification">{toast}</div>}
     </div>
   );
 }

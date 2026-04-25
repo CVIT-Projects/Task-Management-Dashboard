@@ -1,6 +1,7 @@
 import WeeklyTimesheet from '../models/WeeklyTimesheet.js';
 import User from '../models/User.js';
 import { createInternalNotification } from './notificationController.js';
+import { logAudit } from '../utils/auditLogger.js';
 
 // @desc    Submit a weekly timesheet for approval
 // @route   POST /api/timesheets/submit
@@ -96,6 +97,12 @@ export const approveTimesheet = async (req, res, next) => {
       `Your timesheet for week starting ${new Date(timesheet.weekStart).toLocaleDateString()} was approved.`,
       'timesheet_approved'
     );
+
+    await logAudit(req.user.id, 'APPROVE_TIMESHEET', 'WeeklyTimesheet', timesheet._id, { 
+      weekStart: timesheet.weekStart,
+      userId: timesheet.user
+    });
+
     res.json(timesheet);
   } catch (error) {
     next(error);
@@ -124,6 +131,13 @@ export const rejectTimesheet = async (req, res, next) => {
       `Your timesheet for week starting ${new Date(timesheet.weekStart).toLocaleDateString()} was rejected. Note: ${adminNote || 'No note provided.'}`,
       'timesheet_rejected'
     );
+
+    await logAudit(req.user.id, 'REJECT_TIMESHEET', 'WeeklyTimesheet', timesheet._id, { 
+      weekStart: timesheet.weekStart,
+      userId: timesheet.user,
+      adminNote
+    });
+
     res.json(timesheet);
   } catch (error) {
     next(error);

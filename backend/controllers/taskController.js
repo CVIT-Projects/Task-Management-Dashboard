@@ -4,6 +4,7 @@ import Comment from '../models/Comment.js';
 import { logActivity } from './commentController.js';
 import { createInternalNotification } from './notificationController.js';
 import Notification from '../models/Notification.js';
+import { logAudit } from '../utils/auditLogger.js';
 
 // @desc    Get all tasks
 // @route   GET /api/tasks
@@ -110,6 +111,9 @@ export const createTask = async (req, res, next) => {
         task.id
       );
     }
+
+    await logAudit(req.user.id, 'CREATE_TASK', 'Task', task._id, { taskName: task.taskName });
+    
     res.status(201).json(task);
   } catch (error) {
     next(error);
@@ -142,6 +146,11 @@ export const updateTask = async (req, res, next) => {
       );
     }
 
+    await logAudit(req.user.id, 'UPDATE_TASK', 'Task', task._id, { 
+      taskName: task.taskName,
+      changes: req.body 
+    });
+
     res.json(task);
   } catch (error) {
     next(error);
@@ -165,6 +174,8 @@ export const deleteTask = async (req, res, next) => {
       TimeEntry.deleteMany({ task: req.params.id }),
       Notification.deleteMany({ taskId: req.params.id })
     ]);
+
+    await logAudit(req.user.id, 'DELETE_TASK', 'Task', req.params.id, { taskName: task.taskName });
 
     res.json({ message: 'Task deleted successfully' });
   } catch (error) {
@@ -214,7 +225,13 @@ export const updateTaskStatus = async (req, res, next) => {
       status
     );
 
-
+    if (req.user.role === 'admin') {
+      await logAudit(req.user.id, 'UPDATE_TASK_STATUS', 'Task', task._id, { 
+        taskName: task.taskName, 
+        oldStatus, 
+        newStatus: status 
+      });
+    }
 
     res.json(task);
   } catch (error) {
@@ -290,6 +307,11 @@ export const bulkUpdateTasks = async (req, res, next) => {
     else {
       return res.status(400).json({ message: 'Invalid bulk action' });
     }
+
+    await logAudit(req.user.id, `BULK_${action.toUpperCase()}_TASKS`, 'Task', null, { 
+      count: taskIds.length,
+      payload 
+    });
 
     res.json({ message: 'Bulk operation completed successfully' });
   } catch (error) {
