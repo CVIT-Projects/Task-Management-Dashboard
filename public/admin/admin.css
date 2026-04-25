@@ -21,6 +21,21 @@
   --success: #3fb950;
   --radius: 10px;
   --transition: all 0.2s ease;
+  --warning: #d29922;
+}
+
+:root[data-theme="light"] {
+  --bg: #f6f8fa;
+  --bg-2: #ffffff;
+  --bg-3: #ffffff;
+  --bg-hover: #f0f2f5;
+  --border: #d0d7de;
+  --border-l: #d8dee4;
+  --text: #1F2328;
+  --text-2: #57606a;
+  --text-muted: #6e7781;
+  --accent: #0969da;
+  --accent-glow: rgba(9, 105, 218, 0.1);
 }
 
 body {

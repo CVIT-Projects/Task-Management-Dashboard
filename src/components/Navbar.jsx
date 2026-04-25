@@ -1,10 +1,12 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import NotificationBell from './NotificationBell';
 import './Navbar.css';
 
 function Navbar({ searchTerm, onSearchChange, priorityFilter, onPriorityChange, lastUpdated, taskCount, onNavigateToTask }) {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -82,6 +84,14 @@ function Navbar({ searchTerm, onSearchChange, priorityFilter, onPriorityChange, 
         {user?.role === 'admin' && (
           <a href="/admin/" className="admin-link-btn">⚙️ Admin Panel</a>
         )}
+        <button 
+          className="bell-btn" 
+          onClick={toggleTheme} 
+          title="Toggle Theme"
+          style={{ marginRight: '8px' }}
+        >
+          {theme === 'dark' ? '☀️' : '🌙'}
+        </button>
         <NotificationBell onNavigateToTask={onNavigateToTask} />
         <div className="user-section">
           <div className="user-avatar">{user?.name?.charAt(0)?.toUpperCase()}</div>
