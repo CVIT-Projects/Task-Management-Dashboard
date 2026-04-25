@@ -58,6 +58,22 @@ function NotificationBell({ onNavigateToTask }) {
     }
   };
 
+  const handleMarkAllAsRead = async () => {
+    // Optimistic update
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    setUnreadCount(0);
+
+    try {
+      await axios.patch(`${API_BASE}/api/notifications/read-all`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    } catch (err) {
+      console.error('Mark all as read error:', err);
+      // Rollback on error
+      fetchNotifications();
+    }
+  };
+
   const handleNotificationClick = (taskId) => {
     setShowDropdown(false);
     if (onNavigateToTask) onNavigateToTask(taskId);
@@ -74,6 +90,7 @@ function NotificationBell({ onNavigateToTask }) {
         <NotificationDropdown 
           notifications={notifications} 
           onMarkAsRead={handleMarkAsRead}
+          onMarkAllAsRead={handleMarkAllAsRead}
           onNotificationClick={handleNotificationClick}
           onClose={() => setShowDropdown(false)}
         />

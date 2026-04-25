@@ -29,7 +29,9 @@ function LiveTimer({ deadline }) {
   );
 }
 
-function NotificationDropdown({ notifications, onMarkAsRead, onNotificationClick, onClose }) {
+function NotificationDropdown({ notifications, onMarkAsRead, onMarkAllAsRead, onNotificationClick, onClose }) {
+  const unreadCount = notifications.filter(n => !n.read).length;
+
   const getIcon = (type) => {
     switch (type) {
       case 'task_assigned': return '📌';
@@ -55,7 +57,20 @@ function NotificationDropdown({ notifications, onMarkAsRead, onNotificationClick
     <div className="notification-dropdown">
       <div className="dropdown-header">
         <h3>Notifications</h3>
-        <button className="close-dropdown" onClick={onClose}>✕</button>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {unreadCount > 0 && (
+            <button 
+              className="mark-all-read-btn" 
+              onClick={(e) => {
+                e.stopPropagation();
+                onMarkAllAsRead();
+              }}
+            >
+              ✓ Mark All Read
+            </button>
+          )}
+          <button className="close-dropdown" onClick={onClose}>✕</button>
+        </div>
       </div>
       <div className="notification-list">
         {notifications.length === 0 ? (

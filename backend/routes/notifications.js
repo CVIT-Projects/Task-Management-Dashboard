@@ -1,5 +1,5 @@
 import express from 'express';
-import { getMyNotifications, markAsRead } from '../controllers/notificationController.js';
+import { getMyNotifications, markAsRead, markAllAsRead } from '../controllers/notificationController.js';
 import { verifyToken } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -8,6 +8,7 @@ const router = express.Router();
 router.use(verifyToken);
 
 router.get('/', getMyNotifications);
+router.patch('/read-all', markAllAsRead);
 router.patch('/:id/read', markAsRead);
 
 export default router;

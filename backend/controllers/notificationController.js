@@ -29,6 +29,18 @@ export const markAsRead = async (req, res, next) => {
   }
 };
 
+export const markAllAsRead = async (req, res, next) => {
+  try {
+    const result = await Notification.updateMany(
+      { userId: req.user.id, read: false },
+      { $set: { read: true } }
+    );
+    res.json({ message: 'All notifications marked as read', count: result.modifiedCount });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Utility function for internal use (doesn't need req/res)
 export const createInternalNotification = async (userId, message, type, taskId = null) => {
   try {
