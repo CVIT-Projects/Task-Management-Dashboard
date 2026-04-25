@@ -1,6 +1,7 @@
 import express from 'express';
 import User from '../models/User.js';
 import { verifyToken, requireAdmin } from '../middleware/auth.js';
+import { logAudit } from '../utils/auditLogger.js';
 
 const router = express.Router();
 
@@ -34,6 +35,11 @@ router.put('/:id/rate', verifyToken, requireAdmin, async (req, res, next) => {
     user.hourlyRate = rate;
     await user.save();
     
+    await logAudit(req.user.id, 'UPDATE_USER_RATE', 'User', user._id, { 
+      userName: user.name,
+      newRate: rate 
+    });
+
     res.json({ message: 'Hourly rate updated', user });
   } catch (error) {
     next(error);
