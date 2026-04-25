@@ -13,6 +13,7 @@ import reportRoutes from './routes/reports.js';
 import timesheetRoutes from './routes/timesheets.js';
 import commentRoutes from './routes/comments.js';
 import notificationRoutes from './routes/notifications.js';
+import auditRoutes from './routes/audit.js';
 import { checkAllDeadlines } from './utils/deadlineChecker.js';
 import { processRecurringTasks } from './utils/recurringChecker.js';
 
@@ -68,6 +69,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/timesheets', timesheetRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/audit', auditRoutes);
 
 // Serve React production build handled by app.yaml handlers
 // No additional static serving code needed here.

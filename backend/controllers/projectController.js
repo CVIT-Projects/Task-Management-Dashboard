@@ -2,6 +2,7 @@ import Project from '../models/Project.js';
 import Task from '../models/Task.js';
 import TimeEntry from '../models/TimeEntry.js';
 import mongoose from 'mongoose';
+import { logAudit } from '../utils/auditLogger.js';
 
 // @desc    Get all projects
 // @route   GET /api/projects
@@ -72,6 +73,9 @@ export const createProject = async (req, res, next) => {
       ...req.body,
       createdBy: req.user.id
     });
+
+    await logAudit(req.user.id, 'CREATE_PROJECT', 'Project', project._id, { name: project.name });
+
     res.status(201).json(project);
   } catch (error) {
     next(error);
@@ -85,6 +89,12 @@ export const updateProject = async (req, res, next) => {
   try {
     const project = await Project.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!project) return res.status(404).json({ message: 'Project not found' });
+
+    await logAudit(req.user.id, 'UPDATE_PROJECT', 'Project', project._id, { 
+      name: project.name,
+      changes: req.body 
+    });
+
     res.json(project);
   } catch (error) {
     next(error);
@@ -102,6 +112,8 @@ export const deleteProject = async (req, res, next) => {
     // In production we might want to update tasks to null out the project reference
     await Task.updateMany({ project: req.params.id }, { project: null });
     
+    await logAudit(req.user.id, 'DELETE_PROJECT', 'Project', req.params.id, { name: project.name });
+
     res.json({ message: 'Project deleted successfully' });
   } catch (error) {
     next(error);
