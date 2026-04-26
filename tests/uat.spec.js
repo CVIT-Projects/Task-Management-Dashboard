@@ -353,4 +353,150 @@ test.describe('Task Management Dashboard - Full 9-Section UAT Suite', () => {
         await page.goto('/');
         await expect(page.locator(`.task-row:has(.task-name:text-is("${recurringName}")) .recurring-badge`)).toBeVisible();
     });
+
+    // Coverage for the features merged into Staging in PRs #113–#119 plus the
+    // theme + targeted-WebSocket fixes. Each test starts from the state left
+    // by the prior one (admin, on dashboard) and re-logs in only when needed.
+
+    test('17. Theme Toggle persistence + cross-tab sync', async ({ browser }) => {
+        const page = await getSharedPage(browser);
+        await page.goto('/');
+        // Both the theme button and notification bell share .bell-btn — disambiguate by title.
+        const themeBtn = page.locator('button.bell-btn[title="Toggle Theme"]');
+        const initial = await page.evaluate(() => document.documentElement.getAttribute('data-theme') || 'dark');
+        const opposite = initial === 'dark' ? 'light' : 'dark';
+
+        await themeBtn.click();
+        await expect.poll(
+            () => page.evaluate(() => document.documentElement.getAttribute('data-theme'))
+        ).toBe(opposite);
+        const stored = await page.evaluate(() => localStorage.getItem('theme'));
+        expect(stored).toBe(opposite);
+
+        // Reload — theme must persist.
+        await page.reload();
+        await expect.poll(
+            () => page.evaluate(() => document.documentElement.getAttribute('data-theme'))
+        ).toBe(opposite);
+
+        // Toggle back so subsequent tests start from the original state.
+        await page.locator('button.bell-btn[title="Toggle Theme"]').click();
+        await expect.poll(
+            () => page.evaluate(() => document.documentElement.getAttribute('data-theme'))
+        ).toBe(initial);
+    });
+
+    test('18. Productivity Report (admin Analytics tab)', async ({ browser }) => {
+        const page = await getSharedPage(browser);
+        await page.goto('/analytics');
+        // Admin-only tab switcher renders Analytics + Productivity buttons.
+        const prodTab = page.locator('button.tab-btn:has-text("Productivity")');
+        await expect(prodTab).toBeVisible();
+        await prodTab.click();
+
+        await expect(page.locator('h3:has-text("Team Productivity Report")')).toBeVisible();
+        // Headers from the productivity table — proves the schema rendered, not just the heading.
+        for (const header of ['Total Hours', 'Billable %', 'On-Time Rate']) {
+            await expect(page.locator(`th:has-text("${header}")`)).toBeVisible();
+        }
+        // Export-CSV button on the productivity tab triggers a download.
+        const downloadPromise = page.waitForEvent('download');
+        await page.locator('section.report-table-section button.export-btn').click();
+        const download = await downloadPromise;
+        expect(download.suggestedFilename()).toContain('Productivity_Report');
+    });
+
+    test('19. Project Budget fields persist on create', async ({ browser }) => {
+        const page = await getSharedPage(browser);
+        await page.goto('/admin/projects.html');
+        const projectName = `Budget Project ${STAMP}`;
+        await page.fill('#name', projectName);
+        await page.fill('#budgetHours', '40');
+        await page.fill('#budgetAmount', '5000');
+        await page.click('#projectForm button[type="submit"]');
+
+        // Project card appears in the list — confirms the create succeeded with the new fields.
+        await expect(page.locator(`.task-card:has-text("${projectName}")`)).toBeVisible();
+        // Verify the backend round-trip exposed the budget on the project resource.
+        const budget = await page.evaluate(async (name) => {
+            const token = localStorage.getItem('authToken');
+            const res = await fetch('/api/projects', { headers: { Authorization: `Bearer ${token}` } });
+            const projects = await res.json();
+            const match = projects.find(p => p.name === name);
+            return match ? { hours: match.budgetHours, amount: match.budgetAmount } : null;
+        }, projectName);
+        expect(budget).toEqual({ hours: 40, amount: 5000 });
+    });
+
+    test('20. Audit Log lists recent admin actions', async ({ browser }) => {
+        const page = await getSharedPage(browser);
+        await page.goto('/admin/audit.html');
+        // Filter / table chrome must render — no JS error.
+        await expect(page.locator('#filterAction')).toBeVisible();
+        await expect(page.locator('table.audit-table')).toBeVisible();
+        // The earlier tests created tasks/projects, so #auditList should populate
+        // with at least one row referencing one of those actions.
+        await expect.poll(
+            () => page.locator('#auditList tr').count(),
+            { timeout: 5000 }
+        ).toBeGreaterThan(0);
+    });
+
+    test('21. Notifications: Mark All Read clears unread count', async ({ browser }) => {
+        const page = await getSharedPage(browser);
+        // Generate a fresh task_assigned notification (admin → admin) so we
+        // are not relying on stale notifications from earlier tests.
+        await page.goto('/admin/');
+        const notifTaskName = `Notif Task ${STAMP}`;
+        await page.fill('#taskName', notifTaskName);
+        await selectByPartialLabel(page, '#assignedTo', ADMIN_NAME);
+        await fillRequiredTaskFields(page);
+        await page.click('#taskForm button[type="submit"]');
+        await page.waitForTimeout(800);
+
+        await page.goto('/');
+        // Force a fetch of /api/notifications by opening + closing the bell.
+        const bell = page.locator('button.bell-btn[title="Notifications"]');
+        await bell.click();
+        const dropdown = page.locator('.notification-dropdown');
+        await expect(dropdown).toBeVisible();
+
+        const markAll = dropdown.locator('.mark-all-read-btn');
+        await expect(markAll).toBeVisible();
+        await markAll.click();
+
+        // Optimistic state should remove unread items from the dropdown immediately.
+        await expect(dropdown.locator('.notification-item.unread')).toHaveCount(0);
+        // Bell badge is rendered only when unreadCount > 0.
+        await expect(page.locator('.unread-badge')).toHaveCount(0);
+    });
+
+    test('22. Clickable Notification highlights its task on Dashboard', async ({ browser }) => {
+        const page = await getSharedPage(browser);
+        // Create a fresh task so we know exactly which row should light up.
+        await page.goto('/admin/');
+        const clickableName = `Clickable Task ${STAMP}`;
+        await page.fill('#taskName', clickableName);
+        await selectByPartialLabel(page, '#assignedTo', ADMIN_NAME);
+        await fillRequiredTaskFields(page);
+        await page.click('#taskForm button[type="submit"]');
+        await page.waitForTimeout(800);
+
+        await page.goto('/');
+        const bell = page.locator('button.bell-btn[title="Notifications"]');
+        await bell.click();
+        const dropdown = page.locator('.notification-dropdown');
+        await expect(dropdown).toBeVisible();
+
+        // The most recent notification is the one we just generated. Click it.
+        const notif = dropdown.locator(`.notification-item:has-text("${clickableName}")`).first();
+        await expect(notif).toBeVisible();
+        await notif.click();
+
+        // Dropdown closes and the corresponding task row picks up the highlight class.
+        await expect(dropdown).not.toBeVisible();
+        await expect(
+            page.locator(`.task-row:has(.task-name:text-is("${clickableName}")).highlight-glow`)
+        ).toBeVisible({ timeout: 4000 });
+    });
 });
