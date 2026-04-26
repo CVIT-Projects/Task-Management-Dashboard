@@ -1,41 +1,53 @@
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { 
-  Inbox, 
-  User, 
-  Folder, 
-  Settings, 
-  BarChart3, 
-  Clock, 
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import {
+  Inbox,
+  Clock as DueSoonIcon,
+  Flame,
+  CheckCircle2,
+  Settings,
   HelpCircle,
   PlusCircle,
   Hash
 } from 'lucide-react';
 import './Sidebar.css';
 
+const VIEWS = [
+  { id: 'inbox', label: 'Inbox', icon: Inbox },
+  { id: 'due-soon', label: 'Due Soon', icon: DueSoonIcon },
+  { id: 'high-priority', label: 'High Priority', icon: Flame },
+  { id: 'completed', label: 'Completed', icon: CheckCircle2 },
+];
+
 function Sidebar({ projects, onProjectSelect, currentProject, user }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentView = searchParams.get('view') || 'inbox';
+  const onDashboard = location.pathname === '/';
 
-  const navItems = [
-    { id: 'inbox', label: 'Inbox', icon: Inbox, path: '/' },
-    { id: 'my-tasks', label: 'My Tasks', icon: User, path: '/' },
-    { id: 'timesheet', label: 'Timesheet', icon: Clock, path: '/timesheet' },
-    { id: 'reports', label: 'Reports', icon: BarChart3, path: '/analytics' },
-  ];
+  const setView = (id) => {
+    const next = new URLSearchParams(searchParams);
+    if (id === 'inbox') next.delete('view'); else next.set('view', id);
+    if (!onDashboard) {
+      navigate(`/?${next.toString()}`);
+    } else {
+      setSearchParams(next, { replace: false });
+    }
+  };
 
   return (
     <aside className="sidebar">
       <div className="sidebar-section">
-        <div className="sidebar-label">Navigation</div>
-        {navItems.map(item => (
-          <div 
-            key={item.id}
-            className={`sidebar-item ${location.pathname === item.path ? 'active' : ''}`}
-            onClick={() => navigate(item.path)}
+        <div className="sidebar-label">Views</div>
+        {VIEWS.map(v => (
+          <div
+            key={v.id}
+            className={`sidebar-item ${onDashboard && currentView === v.id ? 'active' : ''}`}
+            onClick={() => setView(v.id)}
           >
-            <item.icon size={16} />
-            <span>{item.label}</span>
+            <v.icon size={16} />
+            <span>{v.label}</span>
           </div>
         ))}
       </div>
@@ -45,7 +57,7 @@ function Sidebar({ projects, onProjectSelect, currentProject, user }) {
           <div className="sidebar-label">Projects</div>
           <PlusCircle size={14} className="add-icon" />
         </div>
-        <div 
+        <div
           className={`sidebar-item ${currentProject === 'all' ? 'active' : ''}`}
           onClick={() => onProjectSelect('all')}
         >
@@ -53,7 +65,7 @@ function Sidebar({ projects, onProjectSelect, currentProject, user }) {
           <span>All Projects</span>
         </div>
         {projects.map(p => (
-          <div 
+          <div
             key={p.id}
             className={`sidebar-item ${currentProject === p.id ? 'active' : ''}`}
             onClick={() => onProjectSelect(p.id)}

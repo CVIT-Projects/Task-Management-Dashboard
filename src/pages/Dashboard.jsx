@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import socket, { connectSocket, disconnectSocket, joinUserRoom, joinAdminRoom } from '../utils/socket';
 import Navbar from '../components/Navbar';
@@ -8,7 +9,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import TaskModal from '../components/TaskModal';
 import Sidebar from '../components/Sidebar';
 import Pagination from '../components/Pagination';
-import { Tag, FolderOpen, LayoutList, Columns, SearchX, MoreHorizontal, Plus, RefreshCw, Download } from 'lucide-react';
+import { Tag, FolderOpen, LayoutList, Columns, SearchX, MoreHorizontal, Plus, RefreshCw, Download, Filter, Maximize2, Minimize2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import '../App.css';
 
@@ -138,6 +139,8 @@ function Dashboard() {
   const [toast, setToast] = useState(null);
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 12;
+  const [searchParams] = useSearchParams();
+  const currentView = searchParams.get('view') || 'inbox';
   const { token, user, logout } = useAuth();
 
   const showToast = (message) => {
@@ -291,7 +294,7 @@ function Dashboard() {
   // Reset to page 1 when filters change
   useEffect(() => {
     setPage(1);
-  }, [searchTerm, priorityFilter, tagFilter, projectFilter, viewType]);
+  }, [searchTerm, priorityFilter, tagFilter, projectFilter, viewType, currentView]);
 
   const processedTasks = tasks
     .filter((task) => {
@@ -306,7 +309,21 @@ function Dashboard() {
         tagFilter === 'all' || (task.tags && task.tags.includes(tagFilter));
       const matchesProject =
         projectFilter === 'all' || String(task.project?._id || task.project?.id || task.projectId) === String(projectFilter);
-      return matchesSearch && matchesPriority && matchesTag && matchesProject;
+
+      let matchesView = true;
+      if (currentView === 'due-soon') {
+        const due = new Date(task.deadline);
+        const days = (due - new Date()) / 86400000;
+        matchesView = task.status !== 'Completed' && days >= 0 && days < 7;
+      } else if (currentView === 'high-priority') {
+        matchesView = task.priority === 'High' && task.status !== 'Completed';
+      } else if (currentView === 'completed') {
+        matchesView = task.status === 'Completed';
+      } else if (currentView === 'inbox') {
+        matchesView = task.status !== 'Completed';
+      }
+
+      return matchesSearch && matchesPriority && matchesTag && matchesProject && matchesView;
     })
     .sort((a, b) => {
       const deadlineDiff = new Date(a.deadline) - new Date(b.deadline);
@@ -323,13 +340,7 @@ function Dashboard() {
       <Navbar
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
-        priorityFilter={priorityFilter}
-        onPriorityChange={setPriorityFilter}
-        lastUpdated={lastUpdated}
-        taskCount={processedTasks.length}
         onNavigateToTask={handleNavigateToTask}
-        density={density}
-        onDensityChange={setDensity}
       />
       <div className="dashboard-layout-container">
         <Sidebar 
@@ -356,7 +367,12 @@ function Dashboard() {
             <>
               <header className="page-header">
                 <div className="page-header-left">
-                  <h1 className="page-title">{user?.role === 'admin' ? 'All Tasks' : 'My Tasks'}</h1>
+                  <h1 className="page-title">{
+                    currentView === 'due-soon' ? 'Due Soon' :
+                    currentView === 'high-priority' ? 'High Priority' :
+                    currentView === 'completed' ? 'Completed' :
+                    user?.role === 'admin' ? 'All Tasks' : 'My Tasks'
+                  }</h1>
                   <span className="page-task-count">{processedTasks.length} tasks</span>
                 </div>
                 <div className="page-header-right">
@@ -388,6 +404,19 @@ function Dashboard() {
               <div className="dashboard-actions-row">
                 <div className="filter-group-v2">
                   <div className="filter-select-wrapper">
+                    <Filter size={14} />
+                    <select
+                      value={priorityFilter}
+                      onChange={(e) => setPriorityFilter(e.target.value)}
+                      title="Priority"
+                    >
+                      <option value="All">All Priorities</option>
+                      <option value="High">High</option>
+                      <option value="Medium">Medium</option>
+                      <option value="Low">Low</option>
+                    </select>
+                  </div>
+                  <div className="filter-select-wrapper">
                     <Tag size={14} />
                     <select
                       value={tagFilter}
@@ -402,15 +431,22 @@ function Dashboard() {
                 </div>
 
                 <div className="view-mode-group">
+                  <button
+                    className="density-toggle-btn"
+                    onClick={() => setDensity(density === 'comfortable' ? 'compact' : 'comfortable')}
+                    title={density === 'comfortable' ? 'Switch to Compact' : 'Switch to Comfortable'}
+                  >
+                    {density === 'comfortable' ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                  </button>
                   <div className="toggle-pill-v2">
-                    <button 
-                      className={viewType === 'table' ? 'active' : ''} 
+                    <button
+                      className={viewType === 'table' ? 'active' : ''}
                       onClick={() => setViewType('table')}
                     >
                       <LayoutList size={14} /> List
                     </button>
-                    <button 
-                      className={viewType === 'kanban' ? 'active' : ''} 
+                    <button
+                      className={viewType === 'kanban' ? 'active' : ''}
                       onClick={() => setViewType('kanban')}
                     >
                       <Columns size={14} /> Kanban
