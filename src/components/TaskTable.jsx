@@ -48,14 +48,15 @@ function TaskTable({ tasks, user, highlightedTaskId, density, onTaskClick }) {
         <div className="col-notes">Files</div>
       </div>
       <div className="table-body">
-        {tasks.map((task) => (
-          <TaskCard 
-            key={task.id} 
-            task={task} 
-            highlighted={String(task.id) === String(highlightedTaskId)} 
-            density={density}
-            onClick={() => onTaskClick(task)}
-          />
+        {tasks.map((task, index) => (
+          <div key={task.id} style={{ animationDelay: `${index * 0.05}s` }}>
+            <TaskCard 
+              task={task} 
+              highlighted={String(task.id) === String(highlightedTaskId)} 
+              density={density}
+              onClick={() => onTaskClick(task)}
+            />
+          </div>
         ))}
       </div>
     </div>

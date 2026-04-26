@@ -248,21 +248,21 @@ export default function Analytics() {
           {activeTab === 'analytics' ? (
             <>
               <div className="summary-grid">
-                <div className="summary-card">
+                <div className="summary-card" style={{ animationDelay: '0.1s' }}>
                   <div className="card-icon"><Clock size={24} /></div>
                   <div className="card-info">
                     <div className="label">Total Tracked</div>
                     <div className="value">{totalHours}</div>
                   </div>
                 </div>
-                <div className="summary-card billable">
+                <div className="summary-card billable" style={{ animationDelay: '0.2s' }}>
                   <div className="card-icon"><Badge color="low" tone="soft" icon={CheckCircle2} /></div>
                   <div className="card-info">
                     <div className="label">Billable Hours</div>
                     <div className="value">{billableHoursLabel}</div>
                   </div>
                 </div>
-                <div className="summary-card earnings">
+                <div className="summary-card earnings" style={{ animationDelay: '0.3s' }}>
                   <div className="card-icon"><DollarSign size={24} /></div>
                   <div className="card-info">
                     <div className="label">Total Revenue</div>

@@ -21,7 +21,13 @@
   gap: 16px;
   padding: 16px 20px;
   border-bottom: 1px solid var(--border);
-  animation: shimmer 1.6s ease-in-out infinite;
+  opacity: 0;
+  animation: skeletonFade 0.6s ease-out forwards;
+}
+
+@keyframes skeletonFade {
+  from { opacity: 0; }
+  to { opacity: 0.7; }
 }
 
 .skeleton-row:last-child {
@@ -29,15 +35,15 @@
 }
 
 .skeleton-cell {
-  height: 14px;
-  border-radius: 6px;
+  height: 12px;
+  border-radius: 4px;
   background: linear-gradient(90deg,
-    var(--bg-card) 25%,
-    var(--bg-hover) 50%,
-    var(--bg-card) 75%
+    var(--bg-hover) 25%,
+    var(--border) 50%,
+    var(--bg-hover) 75%
   );
   background-size: 200% 100%;
-  animation: skeletonWave 1.6s ease-in-out infinite;
+  animation: skeletonWave 2s ease-in-out infinite;
 }
 
 .skeleton-cell.sm { max-width: 50px; }

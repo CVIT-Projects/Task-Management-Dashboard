@@ -5,9 +5,15 @@
   font-weight: 600;
   border-radius: 20px;
   white-space: nowrap;
-  transition: var(--transition);
+  transition: all 0.2s ease;
   font-family: 'Inter', sans-serif;
   letter-spacing: 0.2px;
+  cursor: default;
+}
+
+.badge-v2:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
 }
 
 /* Sizes */

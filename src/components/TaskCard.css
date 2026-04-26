@@ -6,13 +6,22 @@
   padding: 12px 20px;
   background: var(--bg-card);
   border-bottom: 1px solid var(--border);
-  transition: var(--transition);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   border-left: 3px solid transparent;
+  animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .task-row:hover {
   background: var(--bg-hover);
+  transform: translateX(4px);
+  z-index: 10;
+  box-shadow: var(--shadow-lg);
 }
 
 .task-row.highlight-glow {
