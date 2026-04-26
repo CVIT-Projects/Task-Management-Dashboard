@@ -181,38 +181,30 @@
   max-width: 70px;
 }
 
-/* Deadline Display */
-.deadline-group {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-.deadline-group.overdue { color: var(--high-color); }
-.deadline-group.due-soon { color: var(--warning-color); }
-
-/* Priority Mini Badge */
-.priority-mini-badge {
-  display: flex;
+/* Priority Marker (vertical-bar + label) */
+.priority-marker {
+  display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  padding: 4px 8px;
-  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
   width: fit-content;
 }
 
-.priority-mini-badge.color-high { color: var(--high-color); background: var(--high-bg); }
-.priority-mini-badge.color-medium { color: var(--medium-color); background: var(--medium-bg); }
-.priority-mini-badge.color-low { color: var(--low-color); background: var(--low-bg); }
-
-.priority-mini-badge svg {
+.priority-marker .priority-bar {
+  display: inline-block;
+  width: 3px;
+  height: 14px;
+  border-radius: 2px;
+  background: currentColor;
   flex-shrink: 0;
 }
+
+.priority-marker.color-high { color: var(--high-color); }
+.priority-marker.color-medium { color: var(--medium-color); }
+.priority-marker.color-low { color: var(--low-color); }
+
+.priority-marker .priority-label { letter-spacing: 0.1px; }
 
 /* Status Select V2 */
 .status-select-wrapper {

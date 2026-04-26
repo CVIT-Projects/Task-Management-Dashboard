@@ -39,6 +39,7 @@
   --radius-lg: 14px;
   --transition: all 0.2s ease;
   --nav-bg: rgba(22, 27, 34, 0.85);
+  --zebra-bg: #181f2a;
 }
 
 :root[data-theme="light"] {
@@ -70,6 +71,7 @@
   --low-bg: rgba(26, 127, 55, 0.12);
   --low-border: rgba(26, 127, 55, 0.35);
   --overdue-bg: rgba(207, 34, 46, 0.06);
+  --zebra-bg: #fafbfc;
 }
 
 html {

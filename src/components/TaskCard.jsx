@@ -50,6 +50,21 @@ function isOverdue(deadlineStr) {
   return new Date(deadlineStr) < new Date();
 }
 
+function getDeadlineDisplay(deadlineStr, status) {
+  if (!deadlineStr) return { color: 'muted', label: '—' };
+  const due = new Date(deadlineStr);
+  const now = new Date();
+  const diffMs = due - now;
+  const diffDays = diffMs / 86400000;
+  const formatted = due.toLocaleDateString([], { month: 'short', day: 'numeric' });
+
+  if (status === 'Completed') return { color: 'muted', label: formatted };
+  if (diffMs < 0) return { color: 'high', label: formatted };
+  if (diffDays < 1) return { color: 'medium', label: 'Due Soon' };
+  if (diffDays < 7) return { color: 'muted', label: formatted };
+  return { color: 'muted', label: 'Upcoming' };
+}
+
 function formatDuration(seconds) {
   const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
   const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
@@ -313,16 +328,16 @@ function TaskCard({ task, highlighted, density, onClick }) {
       </div>
 
       <div className="col-deadline">
-        <div className={`deadline-group ${overdue ? 'overdue' : ''} ${isDueSoon ? 'due-soon' : ''}`}>
-          <Calendar size={13} />
-          <span>{new Date(task.deadline).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
-        </div>
+        {(() => {
+          const dl = getDeadlineDisplay(task.deadline, localStatus);
+          return <Badge color={dl.color} tone="soft" size="sm">{dl.label}</Badge>;
+        })()}
       </div>
 
       <div className="col-priority">
-        <div className={`priority-mini-badge color-${priority.color}`}>
-          {(() => { const Icon = priority.icon; return <Icon size={13} />; })()}
-          <span>{priority.label}</span>
+        <div className={`priority-marker color-${priority.color}`}>
+          <span className="priority-bar" aria-hidden="true" />
+          <span className="priority-label">{priority.label}</span>
         </div>
       </div>
 

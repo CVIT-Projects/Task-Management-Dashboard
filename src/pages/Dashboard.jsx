@@ -7,7 +7,7 @@ import KanbanBoard from '../components/KanbanBoard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import TaskModal from '../components/TaskModal';
 import Sidebar from '../components/Sidebar';
-import { Tag, FolderOpen, LayoutList, Columns, SearchX } from 'lucide-react';
+import { Tag, FolderOpen, LayoutList, Columns, SearchX, MoreHorizontal, Plus, RefreshCw, Download } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import '../App.css';
 
@@ -342,6 +342,37 @@ function Dashboard() {
             </div>
           ) : (
             <>
+              <header className="page-header">
+                <div className="page-header-left">
+                  <h1 className="page-title">{user?.role === 'admin' ? 'All Tasks' : 'My Tasks'}</h1>
+                  <span className="page-task-count">{processedTasks.length} tasks</span>
+                </div>
+                <div className="page-header-right">
+                  <button
+                    className="page-icon-btn"
+                    title="Refresh"
+                    onClick={() => fetchTasks(false)}
+                  >
+                    <RefreshCw size={16} />
+                  </button>
+                  <button
+                    className="page-icon-btn"
+                    title="More options"
+                  >
+                    <MoreHorizontal size={16} />
+                  </button>
+                  {user?.role === 'admin' ? (
+                    <a href="/admin/" className="btn-new-task">
+                      <Plus size={14} /> New Task
+                    </a>
+                  ) : (
+                    <button className="btn-new-task" disabled title="Only admins can create tasks">
+                      <Plus size={14} /> New Task
+                    </button>
+                  )}
+                </div>
+              </header>
+
               <div className="dashboard-actions-row">
                 <div className="filter-group-v2">
                   <div className="filter-select-wrapper">

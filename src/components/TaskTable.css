@@ -86,6 +86,14 @@
   transform: translateY(-1px);
 }
 
+/* Zebra Striping (Sprint D) */
+.table-body > div:nth-child(even) > .task-row {
+  background: var(--zebra-bg);
+}
+.table-body > div:nth-child(even) > .task-row:hover {
+  background: var(--bg-hover);
+}
+
 /* Compact Mode Header */
 .task-table-container.density-compact .table-header {
   padding: 8px 20px;
