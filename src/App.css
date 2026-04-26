@@ -16,8 +16,8 @@
   display: flex;
   align-items: flex-start;
   gap: 16px;
-  background: rgba(248, 81, 73, 0.08);
-  border: 1px solid rgba(248, 81, 73, 0.3);
+  background: var(--high-bg);
+  border: 1px solid var(--high-border);
   border-radius: var(--radius-lg);
   padding: 24px 28px;
   margin-top: 32px;
@@ -30,7 +30,7 @@
 }
 
 .error-banner p {
-  color: #f85149;
+  color: var(--high-color);
   font-size: 0.95rem;
   font-weight: 500;
   line-height: 1.6;
@@ -131,7 +131,7 @@
 .onboarding-step-btn {
   padding: 6px 14px;
   background: var(--accent);
-  color: #0d1117;
+  color: var(--on-accent);
   border-radius: 6px;
   font-size: 0.8rem;
   font-weight: 600;

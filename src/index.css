@@ -36,6 +36,7 @@
   --radius-lg: 14px;
   --transition: all 0.2s ease;
   --nav-bg: rgba(22, 27, 34, 0.85);
+  --on-accent: #ffffff;
 }
 
 :root[data-theme="light"] {
@@ -54,6 +55,17 @@
   --shadow-md: 0 3px 6px rgba(140,149,159,0.15);
   --shadow-lg: 0 8px 24px rgba(140,149,159,0.2);
   --nav-bg: rgba(255, 255, 255, 0.85);
+  /* Priority/status — punchier hex + slightly more opaque badge fills so chips stay legible on white. */
+  --high-color: #cf222e;
+  --high-bg: rgba(207, 34, 46, 0.12);
+  --high-border: rgba(207, 34, 46, 0.35);
+  --medium-color: #9a6700;
+  --medium-bg: rgba(154, 103, 0, 0.12);
+  --medium-border: rgba(154, 103, 0, 0.35);
+  --low-color: #1a7f37;
+  --low-bg: rgba(26, 127, 55, 0.12);
+  --low-border: rgba(26, 127, 55, 0.35);
+  --overdue-bg: rgba(207, 34, 46, 0.06);
 }
 
 html {

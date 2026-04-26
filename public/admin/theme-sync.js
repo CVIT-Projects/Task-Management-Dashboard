@@ -24,7 +24,7 @@
     toggleBtn.className = 'view-dashboard-btn';
     toggleBtn.style.marginRight = '10px';
     toggleBtn.style.background = 'var(--bg-card)';
-    toggleBtn.style.color = 'var(--text)';
+    toggleBtn.style.color = 'var(--text-primary)';
     toggleBtn.style.cursor = 'pointer';
     toggleBtn.textContent = localStorage.getItem('theme') === 'dark' ? '☀️' : '🌙';
 
