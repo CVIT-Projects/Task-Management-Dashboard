@@ -1,7 +1,7 @@
 /* Task Row Layout Refinement */
 .task-row {
   display: grid;
-  grid-template-columns: 80px 2.5fr 1.2fr 1.1fr 1fr 1.1fr 1.4fr;
+  grid-template-columns: 60px 1fr 100px 80px 80px 100px 40px;
   align-items: center;
   padding: 8px 20px;
   background: var(--bg-card);
@@ -154,7 +154,7 @@
 .assigned-pill {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
 }
 
 .user-avatar-circle {
@@ -172,9 +172,13 @@
 }
 
 .user-name-label {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: var(--text-secondary);
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 70px;
 }
 
 /* Deadline Display */
@@ -250,6 +254,36 @@
 .status-v2-select.color-muted { color: var(--text-muted); }
 
 /* File Badge */
+.file-v2-mini-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  transition: var(--transition);
+}
+
+.file-v2-mini-btn:hover {
+  background: var(--bg-card);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.file-v2-mini-btn.locked {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.file-empty-dash {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  padding-left: 10px;
+}
+
 .file-v2-badge {
   display: inline-flex;
   align-items: center;

@@ -15,7 +15,8 @@ import {
   MoreVertical,
   History,
   Send,
-  Ban
+  Ban,
+  Paperclip
 } from 'lucide-react';
 import './TaskCard.css';
 import { useTimer } from '../contexts/TimerContext';
@@ -353,15 +354,14 @@ function TaskCard({ task, highlighted, density, onClick }) {
           <a
             href={task.notes.downloadUrl}
             download={task.notes.fileName}
-            className={`file-v2-badge ${isEffectivelyOverdue ? 'locked' : ''}`}
-            title={isEffectivelyOverdue ? "Locked (Deadline passed)" : `Download ${task.notes.fileName}`}
+            className={`file-v2-mini-btn ${isEffectivelyOverdue ? 'locked' : ''}`}
+            title={task.notes.fileName}
             onClick={(e) => isEffectivelyOverdue && e.preventDefault()}
           >
-            {isEffectivelyOverdue ? <Lock size={12} /> : <Download size={12} />}
-            <span className="file-name-truncate">{task.notes.fileName}</span>
+            <Paperclip size={14} />
           </a>
         ) : (
-          <span className="no-file-label">None</span>
+          <span className="file-empty-dash">-</span>
         )}
       </div>
 

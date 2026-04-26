@@ -39,10 +39,10 @@ function TaskTable({ tasks, user, highlightedTaskId, density, onTaskClick }) {
     <div className={`task-table-container density-${density}`}>
       <div className="table-header">
         <div className="col-id">ID</div>
-        <div className="col-name">Task Details</div>
+        <div className="col-name">Task</div>
         <div className="col-assigned">Assignee</div>
         <div className="col-deadline">
-          Deadline <ArrowUp size={12} className="sort-icon-active" />
+          Due <ArrowUp size={12} className="sort-icon-active" />
         </div>
         <div className="col-priority">Priority</div>
         <div className="col-status">Status</div>
