@@ -1,159 +1,279 @@
-# Task Management Dashboard - Official User Guide
+# Task Management Dashboard — Official User Guide
+
+> Canonical user-facing documentation. The README covers setup and APIs for developers; this guide covers what each role sees and clicks. Keep this file in sync whenever a feature ships.
 
 ## 1. Introduction
+
 ### Brief Overview
-The Task Management Dashboard is a centralized, real-time application designed to streamline company workflows. It combines task delegation, deadline tracking, and an integrated session-based stopwatch directly into one unified interface.
+The Task Management Dashboard is a centralized, real-time application for running a small team. It combines task delegation, deadline tracking, time tracking, weekly timesheets, real-time notifications, and an audit trail in one interface.
 
 ### Purpose of the Application
-The dashboard eliminates the need for external time-tracking software by natively combining task management (similar to Jira or Asana) with time management (similar to Clockify). This ensures accurate sprint planning, transparent billing, and strict accountability for deadlines.
+The dashboard removes the need for separate task, time-tracking, and timesheet tools by combining them. That gives accurate sprint planning, transparent billing, strict deadline accountability, and a complete audit trail of administrative actions.
 
 ### Target Users
-*   **Admins (Project Managers/Leads):** Responsible for creating users, assigning tasks, setting deadlines, and tracking team-wide performance and timesheets.
-*   **Normal Users (Employees/Contractors):** Responsible for picking up their assigned tasks, managing their active timers, and moving tasks through completion statuses.
+- **Admins (Project Managers / Leads):** Create users, assign tasks, set deadlines, manage projects + budgets, approve timesheets, and review the audit log + productivity report.
+- **Normal Users (Employees / Contractors):** Pick up assigned tasks, run timers, comment on tasks, update status, and submit weekly timesheets.
 
 ---
 
 ## 2. Key Features
-*   **Task Creation & Management:** Generate tasks with rich details including project association, estimated hours, and file attachments.
-*   **Task Assignment:** Dynamically assign tasks to specific team members.
-*   **Status Tracking (Interactive):** Move tasks through "Not Started", "In Progress", "Completed", and "Blocked" natively from the UI.
-*   **Role-Based Access Control:** Strict separation of privileges preventing normal users from editing unassigned tasks or modifying global settings.
-*   **Integrated Time Tracking:** A built-in stopwatch that logs time blocks securely to a backend database, automatically calculating total hour estimations versus reality.
-*   **Automated Timesheets:** Weekly aggregation of all logged hours specifically broken down by task, Day-of-the-Week, and grand totals.
+- **Task management:** Create tasks with project, priority, estimated hours, billable flag, tags, file attachment, deadline, and dependencies.
+- **Status tracking:** Move tasks through Not Started → In Progress → Blocked → Completed inline from the dashboard.
+- **Role-based access:** Strict separation — regular users can only see and mutate their own tasks (IDOR-hardened on the server).
+- **Integrated time tracking:** A built-in stopwatch logs time blocks; only one timer runs at a time.
+- **Real-time updates (WebSocket):** Task changes and notifications appear instantly across all open tabs without refresh.
+- **Weekly timesheets:** Mon–Sun grid with submit-for-approval workflow.
+- **Analytics + Productivity report:** Charts, summaries, CSV export, and an admin-only per-user productivity tab.
+- **Project budgets:** Budget hours and budget amount per project, with live consumption bars.
+- **Recurring tasks:** Daily / weekly / monthly auto-respawn after completion.
+- **Task dependencies:** Block a task on one or more upstream tasks until they're done.
+- **Comments + activity log:** Per-task comment thread; status changes are auto-logged.
+- **Notifications:** Bell icon with unread count, real-time delivery, mark-all-read, and click-to-jump-to-task.
+- **Bulk admin actions:** Select multiple tasks → reassign, change status, or delete in one operation.
+- **Audit log:** Every admin mutation is recorded and viewable, filterable by action and date range.
+- **Dark / light theme:** Toggle in the navbar; preference persists across reloads and tabs.
 
 ---
 
 ## 3. User Roles and Permissions
 
 ### The Admin Role
-*   **Full Control:** Has access to the global dashboard and the dedicated Admin Portal.
-*   **User Management:** Can create, edit, and delete employee accounts.
-*   **Task Management:** Can create new tasks, assign them to anyone, and edit any task in the system.
-*   **Visibility:** Can view tasks across the entire company, but is purposefully restricted from proactively starting timers on tasks managed by other employees (the timer is hidden for tasks not assigned to the Admin).
+- **Full Control:** Access to the global dashboard, the Admin Panel (`/admin/`), the projects page, the users page, and the audit log.
+- **User Management:** View all users; set hourly billing rates per user.
+- **Task Management:** Create, edit, delete, and bulk-mutate any task; assign to anyone; set dependencies, recurring schedules, files, tags, billable flag.
+- **Project Management:** Create / edit / delete projects with color and budget fields; review live budget consumption.
+- **Timesheet Approval:** Approve or reject each user's weekly submission, with an optional rejection note.
+- **Reports:** Access the Productivity tab in Analytics; CSV export for both Analytics and Productivity views.
+- **Visibility:** Sees every task in the system; the Admin Panel exposes the full audit history.
 
 ### The Normal User Role
-*   **Limited Access:** Cannot access the Admin Portal or create new users.
-*   **Task Isolation:** The dashboard will *only* display tasks explicitly assigned to them.
-*   **Work Execution:** Empowered to start/stop their task timers and update the completion status of their own work.
+- **Limited Access:** No Admin Panel, no audit log, no productivity report, no user management.
+- **Task Isolation:** The dashboard only shows tasks assigned to them. The backend enforces this — even direct URL access is blocked.
+- **Work Execution:** Start / stop their own timers, change status of their own tasks, post comments, submit their own weekly timesheet.
 
 ---
 
 ## 4. Getting Started
 
 ### Login Process
-1. Navigate to the application portal.
-2. Enter your assigned Email Address and Password.
-3. Upon successful authentication, the system will automatically route you to your designated dashboard based on your role.
+1. Navigate to the application.
+2. Enter your registered Email Address and Password.
+3. The system routes you to your dashboard automatically based on your role.
 
 ### Dashboard Overview After Login
-*   **Header Navigation:** Contains quick metrics (total tasks, polling status) and navigational links to your Timesheet or the Admin Panel (if authorized).
-*   **Global Filters:** Allows you to filter your view by Project Name or Tags.
-*   **View Switcher (NEW):** Toggle between the classic **List View** and the new **Kanban Board View** using the buttons at the top right of the dashboard.
-*   **Task List / Board:** The main workspace listing all tasks. 
+- **Header navigation:** Brand, global search, project / tag / priority filters, list/kanban toggle, theme toggle, notification bell, profile + logout.
+- **Real-time status indicator:** A small "synced" badge — when you see a peer create or change a task, it appears in your view immediately (no refresh).
+- **View switcher:** Toggle between **List View** and **Kanban Board View**; your preference is remembered for next time.
+- **Task list / board:** Your active workspace; sorted by deadline + priority.
+- **Onboarding:** First-time admins see a 3-step setup checklist; first-time users see a welcome tip with the basics.
 
 ### Navigation Explanation
-*   **📊 Dashboard Button:** Returns you to the main active task list.
-*   **🕒 Timesheet Button:** Takes you to your weekly aggregated logged hours.
-*   **⚙️ Admin Panel Button:** (Admins Only) Takes you to the data-entry portal to create users/tasks.
-*   **Logout Button:** Securely ends your session.
+- **📊 Dashboard:** The main task list / board.
+- **🕒 Timesheet:** Your weekly aggregated logged hours.
+- **📈 Analytics:** Charts and CSV exports. Admins also see a "Productivity" tab with per-user stats.
+- **⚙️ Admin Panel:** (Admins only) Tasks, projects, users, audit log.
+- **🌙 / ☀️ Theme:** Toggle dark / light theme. Your preference is saved and synced across tabs.
+- **🔔 Notifications:** Unread badge + dropdown with real-time updates.
+- **❓ Help:** Role-aware quick reference.
+- **Logout:** Securely ends your session.
 
 ---
 
 ## 5. Detailed Feature Guide
 
 ### Creating a Task (Admin Only)
-*   **What it does:** Generates a new piece of work for the team.
-*   **Where to find it:** Click `⚙️ Admin Panel` -> `Tasks` tab.
-*   **Steps:** 
-    1. Fill in the Task Name, description, and deadline. 
-    2. Select the assigned user from the dropdown. 
-    3. Click `Add Task`.
+- **What it does:** Generates a new piece of work for the team.
+- **Where to find it:** `⚙️ Admin Panel` → main page (Tasks form).
+- **Steps:**
+  1. Fill in Task Name, project, priority, start time, deadline, and estimated hours.
+  2. Select the assignee from the dropdown.
+  3. Optionally: tags, file attachment, billable flag, blocked-by dependencies, recurring schedule.
+  4. Click `Add Task`.
 
-### Editing/Deleting a Task (Admin Only)
-*   **What it does:** Modifies parameters of an existing task or permanently removes it.
-*   **Where to find it:** Inside the `⚙️ Admin Panel` under the active task lists grid.
-*   **Steps:** Click the `Edit` button next to a task to modify its parameters, or the `Delete` button to permanently erase it from the system.
+### Editing / Deleting a Task (Admin Only)
+- Click `Edit` on a task card to modify it; click `Delete` to remove it.
+- **Cascading delete:** Removing a task also deletes its time entries, comments, and notifications, so the database stays clean.
 
 ### Assigning Tasks (Admin Only)
-*   **What it does:** Hands off a task to a designated teammate.
-*   **Where to find it:** Inside the `⚙️ Admin Panel` (Same as Creating a Task).
-*   **Steps:** When editing or creating a task, select the "Assigned To" dropdown and choose a registered user.
+- Use the "Assigned To" dropdown when creating or editing a task. The new assignee receives an instant in-app notification.
+
+### Bulk Admin Actions (Admin Only)
+- **What it does:** Update or delete several tasks in one operation instead of one by one.
+- **Where to find it:** Admin Panel main page — checkboxes on each task card; or the "Select All" checkbox in the list header.
+- **Steps:**
+  1. Select 2 or more tasks. A floating bulk action bar appears at the bottom.
+  2. Pick an action: **Reassign** (choose a new assignee), **Change Status**, or **Delete**.
+  3. Click apply. A toast confirms the result.
+
+### Recurring Tasks (Admin Only)
+- **What it does:** A finished task automatically respawns the next occurrence.
+- **Where to find it:** "Recurring" checkbox in the task form.
+- **Steps:**
+  1. Enable **Recurring**.
+  2. Pick a frequency: daily / weekly / monthly.
+  3. Save the task. Each time it's marked Completed, the system queues the next instance with the same template.
+- A 🔁 emoji on the task row indicates a recurring task.
+
+### Task Dependencies — "Blocked By" (Admin Only)
+- **What it does:** Prevents a task from being worked on until its upstream tasks are done.
+- **Where to find it:** "Blocked By" multi-select in the task form.
+- **Steps:**
+  1. Pick one or more upstream tasks in the form.
+  2. Save. The blocked task shows a red **Blocked** badge.
+  3. The assignee's timer + status controls are disabled until every upstream task is Completed.
 
 ### Updating Task Status (Normal User or Admin)
-*   **What it does:** Communicates the current phase of the task.
-*   **Where to find it:** On the Dashboard, inside the specific Task Row, look for the colored badge.
-*   **Steps:** 
-    1. Click the current status badge (e.g., "Not Started"). 
-    2. A dropdown will appear. Select the new status (e.g., "In Progress").
-    *Note: The status also auto-updates from "Not Started" to "In Progress" the very first time you hit Play!*
-    *Note: When a status is marked "Completed", the exact time is automatically captured and the task is immediately sealed off to prevent further time logging.*
+- **What it does:** Communicates the current phase of the task.
+- **Where to find it:** The colored status chip on each task row / kanban card.
+- **Steps:**
+  1. Click the status chip.
+  2. Pick a new status: Not Started / In Progress / Completed / Blocked.
+- **Notes:**
+  - Starting a timer auto-promotes the task to "In Progress".
+  - Marking a task "Completed" stamps the exact end time and locks the timer.
+  - Once the deadline passes, status + timer are locked.
 
-### Viewing Dashboard Insights
-*   **What it does:** Shows high-level project trajectory metrics and estimate burndown.
-*   **Where to find it:** By observing the Green Progress Bar (`Estimate Labels`) above task names.
-*   **Explanation:** When tracking time, the bar fills up. If actual logged hours outpace the original estimate assigned by the Admin, the bar turns Red.
+### Time Tracking
+- Click `▶ Start Timer` on a task you own.
+- Only one timer runs at a time — starting a new one auto-stops the previous one.
+- The card shows a live elapsed counter; the timer survives across page reloads.
+- The billable flag and your hourly rate at the time are snapshotted onto the entry.
+
+### Comments & Activity Log
+- **What it does:** Discuss a task in a thread; system events get auto-logged.
+- **Where to find it:** Task detail panel / per-task comment box.
+- **Behavior:** Every status change is recorded with who, when, and the before / after values, alongside human comments.
 
 ### Switching to Kanban View
-*   **What it does:** Organizes your tasks into visual columns based on their status.
-*   **Where to find it:** Top right of the Dashboard, click the `Kanban Board` button.
-*   **Explanation:** This view is best for visualizing your progress. Each column (Not Started, In Progress, Blocked, Completed) shows cards for your assigned tasks. You can still update statuses and start timers directly from the cards.
+- **What it does:** Organizes tasks into status columns.
+- **Where to find it:** Top right of the Dashboard.
+- **Behavior:** Each column (Not Started, In Progress, Blocked, Completed) shows cards for your tasks. All List-view actions (timer, status update, badges) are available on the cards.
 
 ### Live Deadline Reminders
-*   **What it does:** Alerts you when a task is due within 24 hours.
-*   **Visual Indicator:** A pulsing amber badge appears on the task saying `Due in Xh Ym`.
-*   **Proactive Alerts:** You will also receive an in-app notification every hour for tasks approaching their deadline. Check the 🔔 bell icon in the navbar.
-*   **Real-time sync:** The "Time Left" indicator updates every minute automatically.
+- A pulsing amber badge appears on tasks due within 24 hours.
+- Every hour, the backend scans deadlines and pushes new in-app notifications for tasks approaching theirs.
+- The notification dropdown shows live "Time Left" countdowns next to each deadline notification.
+
+### Notifications
+- **Bell icon (🔔)** in the navbar; the red unread-count badge updates in real time over WebSocket — no refresh required.
+- **Click a notification:** Closes the dropdown and jumps to the linked task on the Dashboard, briefly highlighting the row. If your current filter hides the task, the filters automatically clear so you can find it.
+- **✓ Mark All Read:** A button in the dropdown header marks every unread notification read at once. The badge clears immediately; the action rolls back if the network call fails.
+
+### Theme Toggle (☀️ / 🌙)
+- **What it does:** Switches the entire UI (React + Admin Panel) between dark and light.
+- **Where to find it:** A 🌙 (in dark mode) or ☀️ (in light mode) button in the navbar, next to the bell.
+- **Behavior:** Your preference is saved to the browser. Open another tab and the theme is applied there too.
+
+### Real-Time Updates (under the hood)
+- The app maintains a single WebSocket connection. When an admin creates / updates / deletes a task that involves you, you see it instantly. Same for assigned-to-you notifications and your own timer events.
+- If the connection drops, a slow background poll keeps things in sync until it reconnects.
+
+### Project Budget Tracking (Admin Only)
+- **What it does:** Track each project's budget in hours and dollars, with visual warnings as you consume it.
+- **Where to find it:** Admin Panel → **Projects** page → project form has **Budget (Hours)** and **Budget (Amount $)** fields.
+- **Behavior:**
+  - Set a budget when creating or editing a project.
+  - Each project card shows a progress bar of consumed-vs-budget. The bar turns yellow at 80% and red at 100%.
+  - Detailed budget breakdown is also shown in the Analytics page filtered by project.
+
+### Productivity Report (Admin Only)
+- **What it does:** Per-team-member productivity summary.
+- **Where to find it:** Analytics page → **Productivity** tab (admin only).
+- **Columns:** User, Total Hours, Billable Hours, Billable %, Completed, Overdue, On-Time Rate.
+- **Filters:** Same date-range selector as the Analytics tab.
+- **Export:** Dedicated `Export CSV` button on the Productivity tab.
+
+### Audit Log (Admin Only)
+- **What it does:** A tamper-evident record of every admin mutation.
+- **Where to find it:** Admin Panel → **Audit Logs** link (or `/admin/audit.html`).
+- **What's logged:** CREATE_TASK / UPDATE_TASK / DELETE_TASK / UPDATE_TASK_STATUS / BULK_*_TASKS / project + user changes — with admin id, timestamp, target id, and detail payload.
+- **Filters:** By action type, by date range. Pagination at the bottom.
+
+### Weekly Timesheet
+- **Where to find it:** `🕒 Timesheet` in the navbar.
+- A Mon–Sun grid of time logged per task per day. Navigate between weeks with the arrows.
+- Click `Submit for Approval` to send the current week to your manager.
+- **Re-submission** is allowed if your week was rejected — fix what's wrong and submit again.
+
+### Timesheet Approval (Admin Only)
+- Admins see a "Pending Approvals" queue with each user's submitted week.
+- Approve or reject; rejection takes an optional note that's shown to the user.
+- Status badge on the timesheet header: Pending Review / Approved / Rejected.
+
+### Analytics & Reports
+- Date-range filter, group by task / project / user, optional project filter.
+- Bar chart (hours by group) + pie chart (billable vs non-billable).
+- Summary stat cards: total tracked, billable hours, total earned.
+- Detailed log table with every entry; CSV export.
 
 ---
 
 ## 6. Button and UI Element Explanation
 
-*   **▶ Start Timer:** Initiates a new time-tracking block for a task.
-*   **⏹ Stop [Time]:** Halts the active timer and saves the recorded duration to the database.
-*   **Add Task:** Stores the filled form into the system as a brand new task.
-*   **Edit / Save:** Adjusts existing system entries.
-*   **Delete:** Permanently destroys a record.
-*   **Status Dropdown:** (The colored pill badge). Click this to manually transition a task to Completed, Blocked, or In Progress.
-*   **🔒 Deadline Passed:** A visual lock indicating that a task has missed its due date and can no longer be tracked or edited.
-*   **⏳ Due in Xh Ym:** A pulsing amber badge indicating a deadline is approaching within 24 hours.
-*   **✔ Completed:** A greyed-out button indicating the task is done and no further time tracking is permitted.
-*   **🔔 Notification Bell:** Located in the navbar; shows a red dot when you have new deadline reminders. Click to see live countdowns for each task.
+| Element | What it means |
+|---|---|
+| **▶ Start Timer** | Begin tracking time on a task you own. |
+| **⏹ Stop [Time]** | Halt the active timer and persist the elapsed duration. |
+| **Status chip** (colored pill) | Click to transition the task — Not Started / In Progress / Completed / Blocked. |
+| **Add Task / Edit / Delete** | Standard CRUD on tasks (admin-only). |
+| **Select All** + checkboxes | Activate Bulk Admin Actions for multiple tasks. |
+| **🔒 Deadline Passed** | The deadline has passed; timer + status are locked. |
+| **⏳ Due in Xh Ym** | A pulsing amber badge — deadline within 24 hours. |
+| **🚫 Blocked** | The task is gated by a "Blocked By" upstream that isn't done yet. |
+| **🔁 Recurring badge** | Indicates a task that auto-respawns on completion. |
+| **🔔 Notification Bell** | Real-time unread count; click to open the dropdown. |
+| **✓ Mark All Read** | In the notification dropdown, marks every unread item read. |
+| **Notification item** | Click to close the dropdown and jump to the linked task. |
+| **🌙 / ☀️ Theme Toggle** | Flip the entire UI between dark and light. |
+| **📈 Productivity tab** | (Admins) Per-user productivity table inside Analytics. |
+| **Budget bar on a project** | Live consumption — green / yellow at 80% / red at 100%. |
+| **Audit Logs link** | (Admins) Opens the searchable history of admin actions. |
 
 ---
 
 ## 7. Admin Workflow (End-to-End)
 
-1. **Login:** Admin logs into the system securely.
-2. **Create Users:** Goes to the Admin Panel and ensures the necessary contractors have accounts under the "Users" tab.
-3. **Assign Tasks:** Creates 5 new tasks, attaches spec files, sets estimated hours, assigns them to the contractors, and sets a strict deadline.
-4. **Monitor Progress:** Returns to the Main Dashboard to watch the Status badges dynamically shift as contractors begin working across the globe.
-5. **Generate Insights:** Evaluates the `Timesheet` page at the end of the week, switching the view to different team members to approve or reject their logged hours, checking if timelines were met.
+1. **Login** as an admin.
+2. **Create a project** in `Admin Panel → Projects`. Set a color and a budget (hours + amount).
+3. **Make sure team members are registered** (they sign up themselves at `/register`).
+4. **Create tasks** in the Admin Panel — assign to teammates, set priority, deadline, billable flag, tags, dependencies, and (if needed) a recurring schedule.
+5. **Bulk operations:** When you need to reassign 10 tasks to a new owner or close out a sprint, select the cards and use the bulk action bar.
+6. **Monitor in real time:** Watch the Dashboard — status chips and timer states update as the team works, no refresh needed.
+7. **Approve timesheets:** End of week, go through the Pending Approvals queue and approve or reject each user.
+8. **Review productivity:** Open Analytics → Productivity to see per-user totals; export to CSV for stakeholders.
+9. **Audit when needed:** If a task disappeared or a status flipped unexpectedly, open Admin Panel → Audit Logs and filter by action and date.
 
 ---
 
 ## 8. User Workflow (End-to-End)
 
-1. **Login:** User authenticates and is greeted by *only* the tasks explicitly assigned to them.
-2. **Review:** User clicks the `⬇ Download` button to read the task instructions and specifications provided by the Admin.
-3. **Start Work:** User clicks `▶ Start Timer`. The task auto-promotes to "In Progress."
-4. **Pause:** User takes lunch, clicking `⏹ Stop Timer`. The accumulated hours are seamlessly logged.
-5. **Complete Work:** User finishes the work, changes the Status Dropdown to "Completed". The timer button locks down to prevent accidental clicks, and the exact completion time is stamped permanently for the Admin to see!
+1. **Login** and see only the tasks assigned to you.
+2. **Get a real-time ping** when a new task lands — the bell badge updates immediately. Click the notification to jump to the new task.
+3. **Read the brief:** click the attachment link to download specs.
+4. **Start work:** click `▶ Start Timer`. The task auto-promotes to In Progress.
+5. **Comment as you go:** drop questions or progress notes in the per-task comment thread; status changes are auto-logged for the admin.
+6. **Pause:** click `⏹ Stop` for breaks. Hours accumulate accurately.
+7. **Mark Completed** when done. The end time is stamped permanently and the timer locks.
+8. **Submit your week:** end of the week, go to `🕒 Timesheet` → `Submit for Approval`.
 
 ---
 
 ## 9. Best Practices
 
 ### Do's
-*   **Do** stop your timer when going on a long break or taking a phone call. The system is designed for highly accurate, session-based intervals!
-*   **Do** rely on the green "Estimated Hours" bar to gauge if you are taking too long on an assignment.
-*   **Do** change your task strictly to "Blocked" if you are waiting on external dependencies, so the Admin knows exactly why the timer hasn't been running.
+- **Do** stop your timer for long breaks. The system is designed for accurate session intervals, not background guessing.
+- **Do** rely on the green "Estimated Hours" bar to gauge whether you're overshooting an estimate.
+- **Do** mark a task **Blocked** when waiting on a dependency — the admin can see it and unblock you faster than chasing in chat.
+- **Do** click "Mark All Read" after going through the bell — it keeps the unread count meaningful.
+- **Do** click notifications instead of scrolling — they jump straight to the right task.
 
 ### Don'ts
-*   **Don't** leave tasks running over the deadline! If the deadline crosses while your timer is running, the system will forcefully stop your timer and lock you completely out of the task. Keep track of your deadlines!
-*   **Don't** mark a task as "Completed" until it is genuinely 100% finished. Doing so instantly stamps the official End Time for managerial tracking.
+- **Don't** let tasks run past the deadline. The system locks the timer when a deadline passes.
+- **Don't** mark a task Completed until it's truly done — the end time is stamped permanently for managerial tracking.
+- **Don't** delete a task you might want back later — deletes cascade and remove time entries, comments, and notifications.
 
 ---
 
 ## 10. Conclusion
 
-By strictly linking time-tracking directly to the assignment status, the Task Management Dashboard removes the friction of maintaining separate timesheet spreadsheets. For employees, it provides a distraction-free, isolated view of exactly what needs to be accomplished today. For management, it natively enforces hard deadlines, accurately visualizes estimated time burndown, and guarantees completely accurate weekly hour logs!
+By tying time tracking, status, comments, real-time notifications, and an immutable audit trail into a single workflow, the dashboard removes friction for both employees and managers. Employees get a focused view of exactly what to do today, with timers and statuses one click away. Managers get accurate weekly hour logs, per-user productivity reports, project-budget visibility, and a full audit history of every admin action — all without juggling separate tools.
