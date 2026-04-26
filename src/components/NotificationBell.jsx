@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import NotificationDropdown from './NotificationDropdown';
+import socket from '../utils/socket';
 import './Navbar.css';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
+const FALLBACK_POLL_INTERVAL = 120000; // 2 min — only used if socket disconnects
 
 function NotificationBell({ onNavigateToTask }) {
   const [notifications, setNotifications] = useState([]);
@@ -29,10 +31,29 @@ function NotificationBell({ onNavigateToTask }) {
   }, [token]);
 
   useEffect(() => {
+    if (!token) return;
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
-  }, [fetchNotifications]);
+
+    const handleNew = (notification) => {
+      setNotifications(prev => {
+        const id = notification.id || notification._id;
+        if (prev.some(n => (n.id || n._id) === id)) return prev;
+        return [notification, ...prev].slice(0, 50);
+      });
+      if (!notification.read) setUnreadCount(c => c + 1);
+    };
+    socket.on('notification:new', handleNew);
+
+    // Fallback poll only when the socket is disconnected — recovers anything missed.
+    const interval = setInterval(() => {
+      if (!socket.connected) fetchNotifications();
+    }, FALLBACK_POLL_INTERVAL);
+
+    return () => {
+      socket.off('notification:new', handleNew);
+      clearInterval(interval);
+    };
+  }, [fetchNotifications, token]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {

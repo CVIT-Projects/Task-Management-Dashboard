@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
-import socket, { connectSocket, disconnectSocket } from '../utils/socket';
+import socket, { connectSocket, disconnectSocket, joinUserRoom } from '../utils/socket';
 import Navbar from '../components/Navbar';
 import TaskTable from '../components/TaskTable';
 import KanbanBoard from '../components/KanbanBoard';
@@ -182,6 +182,7 @@ function Dashboard() {
 
     // WebSocket Setup
     connectSocket(token);
+    if (user?.id) joinUserRoom(user.id);
 
     socket.on('task:created', () => {
       console.log('Socket: task:created received');
@@ -216,7 +217,7 @@ function Dashboard() {
       socket.off('tasks:bulk_updated');
       clearInterval(interval);
     };
-  }, [fetchTasks, fetchProjects, token]);
+  }, [fetchTasks, fetchProjects, token, user?.id]);
 
   useEffect(() => {
     localStorage.setItem('dashboard_view', viewType);
