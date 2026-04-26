@@ -84,7 +84,12 @@ function renderUsers() {
   const list = document.getElementById('userList');
 
   if (allUsers.length === 0) {
-    list.innerHTML = `<div class="empty-state" style="grid-column: 1/-1;"><p>No users found.</p></div>`;
+    list.innerHTML = `<div class="empty-state" style="grid-column: 1/-1;">
+      <div class="empty-icon-wrapper"><i data-lucide="users"></i></div>
+      <h3>No users found</h3>
+      <p>No users match the current filter.</p>
+    </div>`;
+    if (window.lucide) window.lucide.createIcons();
     return;
   }
 

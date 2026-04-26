@@ -80,7 +80,12 @@ function renderProjects() {
   document.getElementById('projectCount').textContent = allProjects.length;
 
   if (allProjects.length === 0) {
-    list.innerHTML = `<div class="empty-state"><p>No projects found. Add one on the left!</p></div>`;
+    list.innerHTML = `<div class="empty-state">
+      <div class="empty-icon-wrapper"><i data-lucide="folder-plus"></i></div>
+      <h3>No projects yet</h3>
+      <p>Use the form on the left to create your first project.</p>
+    </div>`;
+    if (window.lucide) window.lucide.createIcons();
     return;
   }
 

@@ -328,7 +328,12 @@ function renderTasks() {
 
   const list = document.getElementById('taskList');
   if (tasks.length === 0) {
-    list.innerHTML = `<div class="empty-state"><div class="empty-icon">🗂️</div><p>No tasks match your filter.</p></div>`;
+    list.innerHTML = `<div class="empty-state">
+      <div class="empty-icon-wrapper"><i data-lucide="inbox"></i></div>
+      <h3>No tasks match your filter</h3>
+      <p>Try clearing the search box or selecting a different priority above.</p>
+    </div>`;
+    if (window.lucide) window.lucide.createIcons();
     return;
   }
 
