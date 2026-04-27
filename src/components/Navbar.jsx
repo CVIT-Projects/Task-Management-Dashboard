@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { User as UserIcon } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 import './Navbar.css';
 
@@ -80,7 +81,9 @@ function Navbar({ searchTerm, onSearchChange, priorityFilter, onPriorityChange, 
         <button className="admin-link-btn" onClick={() => navigate('/timesheet')}>🕒 Timesheet</button>
         <button className="admin-link-btn" onClick={() => navigate('/analytics')}>📈 Reports</button>
         <button className="admin-link-btn" onClick={() => navigate('/help')}>❓ Help</button>
-        <button className="admin-link-btn" onClick={() => navigate('/profile')}>👤 Profile</button>
+        <button className="admin-link-btn" onClick={() => navigate('/profile')}>
+          <UserIcon size={14} style={{ marginRight: '6px' }} /> Profile
+        </button>
 
         {user?.role === 'admin' && (
           <a href="/admin/" className="admin-link-btn">⚙️ Admin Panel</a>

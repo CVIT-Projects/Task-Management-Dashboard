@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import { logAudit } from '../utils/auditLogger.js';
 
 // Helper function to generate JWT token
 const generateToken = (user) => {
@@ -79,8 +80,19 @@ export const login = async (req, res, next) => {
 
 export const getMe = async (req, res, next) => {
   try {
-    // Fetch full user details from DB to include fields not in the JWT (like hourlyRate)
-    const user = await User.findById(req.user.id);
+    // Return the user data attached by verifyToken middleware (from JWT)
+    // This is fast and fires on every page load.
+    res.json({ user: req.user });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getProfile = async (req, res, next) => {
+  try {
+    // Fetch full user details for the Profile page.
+    // Explicitly exclude password for defense in depth.
+    const user = await User.findById(req.user.id).select('-password');
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -102,6 +114,10 @@ export const changePassword = async (req, res, next) => {
       return res.status(400).json({ message: 'New password must be at least 8 characters long' });
     }
 
+    if (currentPassword === newPassword) {
+      return res.status(400).json({ message: 'New password cannot be the same as the current password' });
+    }
+
     const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -116,6 +132,12 @@ export const changePassword = async (req, res, next) => {
     // Update password (pre-save hook will handle hashing)
     user.password = newPassword;
     await user.save();
+
+    // Log security-critical event
+    await logAudit(req.user.id, 'CHANGE_PASSWORD', 'User', user._id, { 
+      email: user.email,
+      timestamp: new Date()
+    });
 
     res.json({ message: 'Password changed successfully' });
   } catch (error) {
